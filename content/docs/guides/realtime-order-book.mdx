@@ -1,0 +1,151 @@
+---
+title: Realtime order-book flow
+description: Carry snapshot-based depth safely from a provider through Relay into Mosaic.
+---
+
+An incremental order-book event is meaningful only relative to the correct
+preceding state. The complete flow must therefore coordinate provider recovery,
+Relay cache state, WebSocket delivery, and the browser's Mosaic snapshot.
+
+```txt
+provider snapshot + updates
+          ↓
+Relay pipeline and complete cache
+          ↓
+hydration + incremental WebSocket events
+          ↓
+Mosaic reducer
+          ↓
+Mosaic OrderBook
+```
+
+## 1. Establish provider state
+
+Follow the upstream provider's synchronization protocol. A common pattern is:
+
+1. open the provider update stream
+2. temporarily buffer updates
+3. fetch a complete snapshot
+4. discard buffered updates already represented by the snapshot
+5. replay verified subsequent updates
+
+Some providers use sequence numbers, update ranges, checksums, or connection-local
+identifiers. The adapter and host service must preserve the information required
+by that protocol.
+
+## 2. Install the Relay snapshot
+
+Normalize the provider snapshot into `OrderBookSnapshot` and pass it through the
+pipeline:
+
+```ts
+await pipeline.processEvent(snapshot);
+```
+
+Relay stores the complete book before publishing the snapshot event. This makes
+the latest synchronized state available for hydration.
+
+## 3. Process incremental updates
+
+For each normalized update, the pipeline:
+
+1. loads the exact symbol-and-venue snapshot
+2. checks complete market identity
+3. checks sequence freshness and continuity when provided
+4. reconciles changed levels
+5. stores the resulting complete snapshot
+6. publishes the compact original update
+
+If the snapshot is missing or continuity fails, `OrderBookPipelineError` signals
+that the service must resynchronize.
+
+<Callout type="warn" title="Do not continue after a gap">
+  A locally sorted book can still be incomplete. Stop applying updates and fetch
+  a fresh provider snapshot after any unrepairable continuity failure.
+</Callout>
+
+## 4. Subscribe and hydrate the browser
+
+The browser subscribes to the exact book and requests cached hydration:
+
+```ts
+const orderBook = {
+  symbol: "BTC/USD",
+  venue: "COINBASE",
+};
+
+socket.send(
+  JSON.stringify({
+    type: "subscribe_order_books",
+    orderBooks: [orderBook],
+  }),
+);
+
+socket.send(
+  JSON.stringify({
+    type: "hydrate",
+    request: { orderBooks: [orderBook] },
+  }),
+);
+```
+
+Subscribe before hydration so new events are not intentionally ignored while
+the cache is read. The client must still reconcile live messages that arrive
+before the hydration response.
+
+## 5. Coordinate hydration and live messages
+
+Maintain a short pre-snapshot buffer in the browser:
+
+```txt
+subscription active
+      ↓
+buffer live order-book events
+      ↓
+receive hydrated snapshot
+      ↓
+discard events represented by snapshot sequence
+      ↓
+replay continuous newer events
+```
+
+If events do not expose sequence continuity, the application cannot prove that a
+buffered event follows the snapshot. Choose a provider-specific policy, such as
+requesting a new snapshot after subscription acknowledgement or treating reset
+events as new state.
+
+## 6. Validate for Mosaic
+
+Parse the hydrated snapshot and live updates with Mosaic schemas before storing
+them in UI state:
+
+```ts
+const snapshot = orderBookSnapshotSchema.parse(relaySnapshot);
+const update = orderBookUpdateSchema.parse(relayUpdate);
+const result = applyOrderBookUpdate(snapshot, update, { depth: 50 });
+```
+
+The Mosaic reducer checks identity and sequence continuity and returns a new
+immutable snapshot. Preserve enough levels for the screen and any local
+calculation; the component's `depth` prop can independently limit visible rows.
+
+## 7. Render and handle interaction
+
+```tsx
+<OrderBook
+  snapshot={book}
+  quoteCurrency="USD"
+  depth={20}
+  onSelectPrice={(price) => tradeDraft.setLimitPrice(price)}
+/>
+```
+
+Selecting a book price assists order entry. It does not guarantee liquidity or
+reserve that price for execution.
+
+## Recovery ownership
+
+Relay detects backend cache discontinuity. Mosaic detects browser-state
+discontinuity. The application coordinates recovery at both layers, presents a
+stale or reconnecting state, and prevents an apparently live but inaccurate book
+from remaining interactive.

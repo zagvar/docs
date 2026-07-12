@@ -1,0 +1,106 @@
+---
+title: Connection lifecycle
+description: Connect, hydrate, subscribe, recover, and expose stale state deliberately.
+---
+
+A realtime trading screen needs an explicit connection state machine. A WebSocket
+object being open is not sufficient evidence that every displayed market stream
+is current.
+
+## Recommended states
+
+```txt
+idle
+  ↓
+connecting
+  ↓
+connected → subscribing → hydrating → live
+     ↑                         ↓
+     └────── reconnecting ← stale
+```
+
+The exact names are application choices, but UI state should distinguish initial
+loading, live data, stale retained data, and unavailable data.
+
+## Initial connection
+
+1. authenticate and authorize the client
+2. open the application WebSocket
+3. send exact market-data subscriptions
+4. request cached hydration
+5. merge hydration with live events
+6. mark each stream live only after its state is usable
+
+Relay currently does not send subscription acknowledgements. If the product
+requires acknowledged subscription state, add that behavior at the application
+protocol layer.
+
+## Hydration race
+
+Live events may arrive before or during hydration. Do not let an older hydrated
+value overwrite a newer live value.
+
+For replaceable quotes and trades, compare the normalized stream identity and
+timestamp. For bars, compare identity, timeframe, and bar timestamp. For order
+books, use snapshot and sequence continuity rather than timestamp alone.
+
+## Disconnect behavior
+
+When the socket closes:
+
+- mark affected streams stale immediately
+- stop presenting selection controls as current if that could mislead users
+- retain the last values only when the UI clearly labels them as stale
+- cancel timers and pending request state tied to the old connection
+- avoid clearing useful state merely because a short reconnect is underway
+
+Mosaic exposes `isDisabled` on interactive market-data components, allowing the
+host to retain visible data while preventing price selection.
+
+## Reconnect
+
+Use capped exponential backoff and add jitter:
+
+```ts
+const baseDelay = calculateReconnectDelay(attempt);
+const jitteredDelay = baseDelay * (0.8 + Math.random() * 0.4);
+```
+
+On a new connection, restore subscriptions from application state and hydrate
+again. Do not assume the new stream continues the sequence of the previous
+connection unless the provider protocol explicitly guarantees it.
+
+## Resubscription ownership
+
+`RelayClientSession` tracks subscriptions only for one active server-side
+connection. Closing the session clears them. The browser application must retain
+its desired subscription set and send it again after reconnecting.
+
+Use stable request keys based on symbol, venue, and timeframe so UI mount/unmount
+behavior does not create accidental duplicate subscription state.
+
+## Liveness and freshness
+
+Socket liveness and market-data freshness are different:
+
+- ping/pong can show that the transport is alive
+- timestamps can show whether a replaceable stream is recent
+- sequence continuity can show whether an order book is complete
+- market clocks can explain legitimately quiet markets
+
+Define freshness thresholds per asset class and stream. A one-minute bar and a
+high-frequency quote should not share one stale timeout.
+
+## Error presentation
+
+Separate user-visible states for:
+
+- reconnecting transport
+- unauthorized or unentitled stream
+- provider unavailable
+- delayed or indicative data
+- stale retained values
+- order-book resynchronization
+
+Avoid presenting every condition as a generic network error. The appropriate
+user action and trading risk differ.

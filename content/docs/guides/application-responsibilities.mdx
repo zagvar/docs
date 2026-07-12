@@ -1,0 +1,112 @@
+---
+title: Application responsibilities
+description: Understand the product, security, execution, and operational concerns outside Mosaic and Relay.
+---
+
+Mosaic and Relay intentionally stop short of being a complete trading platform.
+The omitted responsibilities are not secondary; they are the areas most affected
+by product design, providers, jurisdiction, and operating model.
+
+## Responsibility map
+
+| Layer | Primary responsibility |
+| --- | --- |
+| Relay | Normalize, cache, publish, hydrate, and transport market data |
+| Mosaic | Form order intent and present accessible trading UI state |
+| Host application | Identity, authorization, product policy, state orchestration, and execution |
+| Provider adapters | Translate external protocols and payloads |
+| Trading backend | Authoritative validation, preview, risk, routing, and order lifecycle |
+
+## Authentication and authorization
+
+Authenticate clients before attaching Relay sessions or accepting trading API
+requests. Authorize every requested account, symbol, venue, and market-data
+channel on the server.
+
+Client-side visibility and disabled controls are not authorization mechanisms.
+
+## Market-data entitlements
+
+The application must enforce provider licensing and user entitlements. It also
+owns public labelling for realtime, delayed, indicative, consolidated, and
+synthetic data.
+
+Do not forward provider credentials, private endpoints, internal service names,
+or restricted source metadata through Relay messages or Mosaic display objects.
+
+## Accounts and balances
+
+Mosaic receives displayed cash and asset availability to improve order-entry
+feedback. The backend remains authoritative for:
+
+- account ownership and status
+- settled and unsettled funds
+- buying power and margin
+- reservations from open orders
+- position availability
+- currency conversion
+- custody and settlement constraints
+
+Recalculate relevant state when previewing and confirming an order.
+
+## Order preview and execution
+
+Relay is not an order transport. Send Mosaic `OrderIntent` values to an
+authenticated trading API.
+
+The backend should:
+
+1. parse and validate the submitted intent
+2. load current account and product rules
+3. apply permissions, risk, and compliance checks
+4. obtain authoritative pricing and fees
+5. bind any preview to the exact intent and user context
+6. verify preview expiry at confirmation
+7. route through a broker or venue adapter
+8. persist and expose order lifecycle state
+
+Never treat frontend validation or an estimated market reference as execution
+authority.
+
+## Compliance and policy
+
+Depending on the product, the host may need suitability, appropriateness,
+disclosures, jurisdiction restrictions, best-execution policy, surveillance,
+record keeping, tax handling, and market-data agreements.
+
+These requirements cannot be implemented safely as generic defaults in a UI or
+market-data library.
+
+## Precision and accounting
+
+Mosaic and Relay currently use JavaScript numbers in display-oriented market
+contracts. Execution, balances, ledger entries, fees, and accounting should use
+the backend's decimal-safe representation and explicit currency precision.
+
+Convert to display numbers only at a controlled boundary.
+
+## Reliability and observability
+
+The application owns:
+
+- provider reconnect and failover
+- cache and pub/sub availability
+- hydration and subscription metrics
+- stale-data detection
+- order-book resynchronization
+- structured logs and tracing
+- rate limits and abuse controls
+- graceful shutdown
+- schema and protocol versioning
+
+Test these paths with deterministic fake providers and sockets before relying on
+credentialed smoke tests.
+
+## Product presentation
+
+Mosaic provides accessible behavior and styling slots, but the host controls
+brand, responsive layout, disclosure placement, error tone, terminology, and
+support paths.
+
+The final application should make market-data state and execution uncertainty
+understandable rather than merely technically correct.

@@ -1,0 +1,134 @@
+---
+title: Venue-aware market data
+description: Keep exchange-specific and consolidated streams distinct from provider ingestion to UI state.
+---
+
+The same symbol can trade simultaneously on multiple venues with different
+prices, liquidity, trading hours, and order books. Venue is therefore part of
+market-data identity rather than optional display decoration.
+
+```txt
+BTC/USD at COINBASE
+BTC/USD at KRAKEN
+BTC/USD consolidated
+```
+
+These are three distinct streams even though they share a symbol.
+
+## Relay request identity
+
+Relay cache, hydration, and subscription APIs identify most streams with
+`MarketDataRequest`:
+
+```ts
+interface MarketDataRequest {
+  symbol: string;
+  venue?: string;
+}
+```
+
+Symbols and venues are normalized for stable keys. Requests with different
+venues do not share cache entries or subscription state.
+
+```ts
+await cache.getLatestQuote({
+  symbol: "BTC/USD",
+  venue: "COINBASE",
+});
+```
+
+## What omitted venue means
+
+Omitting `venue` addresses one deliberate default or consolidated stream. It is
+not a wildcard and does not match all venue-specific events.
+
+The host application must define what that default means. Common policies
+include:
+
+- provider-defined consolidated feed
+- national best bid and offer
+- application-selected primary venue
+- synthetic aggregation produced by an internal service
+
+Do not silently combine venue-specific order books under an omitted venue.
+Aggregation requires explicit rules for price levels, quantities, sequence,
+timestamps, and attribution.
+
+## Quote venue fields
+
+A consolidated `MarketQuote` may identify the venues contributing its best bid
+and ask:
+
+```ts
+const quote = {
+  type: "quote",
+  symbol: "AAPL",
+  assetClass: "equity",
+  bidPrice: 212.14,
+  bidQuantity: 300,
+  bidVenue: "X",
+  askPrice: 212.16,
+  askQuantity: 200,
+  askVenue: "Y",
+  timestamp: "2026-07-13T02:00:00.000Z",
+};
+```
+
+The stream-level `venue` may be absent because the quote is consolidated while
+`bidVenue` and `askVenue` retain side-specific attribution.
+
+## WebSocket subscriptions
+
+Subscribe to exact identities:
+
+```json
+{
+  "type": "subscribe_quotes",
+  "quotes": [
+    { "symbol": "BTC/USD", "venue": "COINBASE" },
+    { "symbol": "BTC/USD", "venue": "KRAKEN" }
+  ]
+}
+```
+
+A Coinbase subscription does not receive Kraken events. An omitted-venue
+subscription receives only omitted-venue events.
+
+Use the same identity in hydration and live subscription requests so initial and
+incremental state refer to the same stream.
+
+## Mapping to Mosaic
+
+Mosaic's order-book and trade contracts can retain full market identity. Its
+sanitized `MarketQuote` deliberately uses public `displaySource` attribution
+rather than backend venue fields. Map internal codes to an approved label:
+
+```ts
+const mosaicQuote = marketQuoteSchema.parse({
+  symbol: relayQuote.symbol,
+  assetClass: relayQuote.assetClass,
+  bidPrice: relayQuote.bidPrice,
+  bidQuantity: relayQuote.bidQuantity,
+  askPrice: relayQuote.askPrice,
+  askQuantity: relayQuote.askQuantity,
+  timestamp: relayQuote.timestamp,
+  displaySource: toPublicVenueLabel(relayQuote.venue),
+});
+```
+
+Public labels should describe the source without exposing credentials, service
+topology, private endpoints, or routing details.
+
+## Product and regulatory policy
+
+The application remains responsible for:
+
+- market-data licensing and entitlements
+- delayed versus realtime labelling
+- identifying indicative or synthetic prices
+- choosing a consolidated-feed policy
+- determining which venue can be used for trading
+- explaining when displayed and execution venues differ
+
+Relay preserves identity and Mosaic presents approved state; neither project can
+choose those policies for every product.

@@ -1,4 +1,11 @@
 {
   "title": "Build with both",
-  "pages": ["index", "relay-to-mosaic"]
+  "pages": [
+    "index",
+    "relay-to-mosaic",
+    "venue-aware-market-data",
+    "realtime-order-book",
+    "connection-lifecycle",
+    "application-responsibilities"
+  ]
 }
