@@ -3,8 +3,15 @@
   "pages": [
     "index",
     "installation",
+    "architecture",
+    "market-data-contracts",
+    "providers",
     "pipeline",
     "caching-and-hydration",
-    "order-books"
+    "redis",
+    "websocket",
+    "order-books",
+    "operations",
+    "adapters"
   ]
 }

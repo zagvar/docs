@@ -1,0 +1,67 @@
+---
+title: Core concepts
+description: Understand Mosaic's contracts, validation model, and separation between behavior and presentation.
+---
+
+Mosaic separates framework-free trading behavior from accessible React
+presentation.
+
+## Core and React packages
+
+`@zagvar/mosaic-core` contains schemas, types, validation, summaries, decimal
+helpers, and reducers. It can be used without React.
+
+`@zagvar/mosaic-react` contains accessible components and `useTradeDraft`. Its
+components consume core contracts but do not fetch data or submit to a broker.
+
+## Drafts, intents, and summaries
+
+- An `OrderDraft` is editable form state.
+- An `OrderIntent` is the exact validated order the user formed.
+- An `OrderSummary` supplements that intent with review information, estimates,
+  warnings, fees, and an optional backend preview.
+
+Mosaic does not round invalid values into valid ones. It returns stable validation
+codes so the user can correct the draft explicitly.
+
+## Asset rules
+
+`AssetRules` describe the constraints relevant to an instrument, including
+allowed order types, supported time-in-force values, precision, tick size, lot
+size, minimums, maximums, notional support, and extended-hours rules.
+
+Rules are supplied by the host application. They may originate from a broker,
+exchange, product catalogue, or backend policy service.
+
+## Market data
+
+Mosaic's display contracts use readable, provider-neutral fields and ISO 8601
+timestamps. They are intentionally sanitized: credentials, endpoints, account
+identifiers, routing details, and internal service names do not belong in UI
+market-data objects.
+
+The host controls whether data is realtime, delayed, or indicative and how its
+public source is labelled.
+
+## Controlled and uncontrolled state
+
+`TradeTicket` and `useTradeDraft` can own editable state internally or receive a
+controlled `value`. Controlled state is useful when draft state must survive
+navigation, synchronize with another panel, or live in an application store.
+
+See [Controlled state](/docs/mosaic/guides/controlled-state).
+
+## Presentation boundary
+
+Mosaic supplies semantic markup, interaction behavior, state, and accessibility.
+It does not ship a product theme. Components expose named `classNames` slots so
+the host design system controls layout, typography, color, and responsive
+behavior.
+
+## Backend authority
+
+Frontend rules and balances are usability inputs, not security controls. The
+backend must repeat all authoritative validation before previewing or executing
+an order.
+
+See [Order lifecycle](/docs/mosaic/order-lifecycle) for the complete boundary.

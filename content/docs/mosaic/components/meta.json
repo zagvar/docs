@@ -1,0 +1,11 @@
+{
+  "title": "Components",
+  "pages": [
+    "trade-ticket",
+    "order-review",
+    "quote-display",
+    "order-book",
+    "recent-trades",
+    "trading-chart"
+  ]
+}

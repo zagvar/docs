@@ -1,0 +1,49 @@
+---
+title: Localization
+description: Replace Mosaic copy and use locale-aware number and date formatting.
+---
+
+Mosaic does not require a translation framework. Components accept plain message
+objects that can come from i18next, React Intl, Lingui, JSON, or an internal
+translation service.
+
+```tsx
+<QuoteDisplay
+  quote={quote}
+  quoteCurrency="EUR"
+  messages={{
+    bid: "Kauf",
+    ask: "Verkauf",
+    spread: "Spanne",
+  }}
+/>
+```
+
+Partial objects override defaults. Function-valued messages receive formatted
+values or context when text must include dynamic data.
+
+## Locale context
+
+Mosaic reads locale from React Aria. Configure the application provider rather
+than formatting market values before passing them to components.
+
+```tsx
+import { I18nProvider } from "react-aria-components";
+
+<I18nProvider locale="de-DE">
+  <TradingScreen />
+</I18nProvider>;
+```
+
+The locale affects number, currency-adjacent value, date, and time formatting.
+The `quoteCurrency` prop supplies the displayed currency code; it is separate
+from locale.
+
+## Validation and execution errors
+
+Trade-ticket validation messages can be strings or context-aware functions.
+Order-review messages include warning codes, fee types, market-data modes, time
+in force, and broker-neutral execution errors.
+
+Keep those stable codes in application logic and translate only at the UI
+boundary.

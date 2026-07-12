@@ -1,0 +1,25 @@
+---
+title: RecentTrades
+description: Present a bounded list of normalized trades with locale-aware formatting.
+---
+
+`RecentTrades` displays normalized Mosaic `MarketTrade` values.
+
+```tsx
+<RecentTrades
+  trades={trades}
+  quoteCurrency="USD"
+  depth={30}
+  onSelectPrice={(price) => tradeDraft.setLimitPrice(price)}
+/>
+```
+
+`depth` limits the rendered list. Prices, quantities, and timestamps use the
+current locale and configurable fraction digits.
+
+Trades may carry `buy`, `sell`, or unknown aggressor-side information. Separate
+class-name slots allow the host to distinguish those rows visually without
+making color the only semantic signal.
+
+When `onSelectPrice` is provided, each trade price becomes an accessible button
+and returns both the selected price and original trade.

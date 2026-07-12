@@ -1,0 +1,65 @@
+---
+title: Architecture
+description: Understand Relay's provider, normalization, processing, storage, and delivery boundaries.
+---
+
+Relay is a set of composable packages rather than a required server framework.
+
+```txt
+upstream provider
+      ↓ provider adapter
+normalized MarketEvent
+      ↓
+MarketDataPipeline
+      ├── MarketDataCache
+      └── RelayEventBus
+                ↓
+         client transport
+```
+
+## Provider boundary
+
+Adapters own credentials, provider protocols, raw parsing, symbol conventions,
+units, and field mapping. Everything downstream receives Relay contracts.
+
+The provider-neutral `MarketDataProvider` interface describes historical,
+snapshot, clock, and live capabilities, but an adapter may also expose a more
+specialized client when the provider protocol does not fit one universal shape.
+
+## Processing boundary
+
+`MarketDataPipeline` coordinates cache writes and event publication. It does not
+open provider connections or manage client sessions.
+
+Cache writes happen before publication so subscribers can observe state that
+already includes the published event.
+
+## Storage and distribution
+
+`MarketDataCache` represents latest readable state. `RelayEventBus` represents
+new events. In-memory implementations support tests and demos; Redis
+implementations support shared state and cross-process pub/sub.
+
+Neither contract requires a particular deployment topology.
+
+## Hydration and transport
+
+`MarketDataHydrator` reads cache state for newly connected clients. The WebSocket
+package validates client requests, tracks subscriptions, returns hydration, and
+filters live bus messages for each session.
+
+The transport does not contact providers when cache data is missing.
+
+## Application orchestration
+
+The host service remains responsible for:
+
+- opening and reconnecting provider streams
+- checking provider capabilities
+- deciding symbol and venue mappings
+- fetching missing or recovery snapshots
+- handling pipeline and infrastructure errors
+- authentication, authorization, and market-data entitlements
+- lifecycle and observability of Redis and WebSocket resources
+
+Relay keeps these policies explicit because they vary by provider and product.

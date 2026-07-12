@@ -1,0 +1,76 @@
+---
+title: Market-data contracts
+description: The provider-neutral identities, events, requests, and channels used throughout Relay.
+---
+
+Relay core defines the shared language between adapters, caches, pipelines,
+event buses, and transports.
+
+## Market identity
+
+```ts
+interface MarketIdentity {
+  symbol: string;
+  assetClass: AssetClass;
+  venue?: string;
+  baseAsset?: string;
+  quoteAsset?: string;
+}
+```
+
+`assetClass` supports equity, crypto, FX, commodity, index, fund, option, future,
+and other instruments. Pair fields are optional because they do not naturally
+describe every market.
+
+## Requests and identity
+
+Cache and subscription APIs use `MarketDataRequest`:
+
+```ts
+const request = {
+  symbol: "BTC/USD",
+  venue: "COINBASE",
+};
+```
+
+Keys normalize symbol and venue casing. Omitting venue addresses a distinct
+default or consolidated stream, not all venues.
+
+## Events
+
+| Contract | Meaning |
+| --- | --- |
+| `MarketTrade` | Completed execution with price, quantity, and timestamp |
+| `MarketQuote` | Current best bid and ask with displayed quantities |
+| `MarketBar` | OHLCV aggregate for a timeframe |
+| `OrderBookSnapshot` | Complete depth state |
+| `OrderBookUpdate` | Changed depth levels relative to state |
+
+`MarketEvent` is the union accepted by `MarketDataPipeline`.
+
+Relay uses full public field names such as `bidPrice`, `askQuantity`, and
+`volumeWeightedAveragePrice`. Timestamps are ISO 8601 strings. Adapters should
+normalize provider units before constructing events.
+
+## Consolidated quotes
+
+`MarketQuote.venue` identifies the stream itself. Optional `bidVenue` and
+`askVenue` identify the venues contributing each side of a consolidated quote.
+They may differ from each other and from the stream-level venue.
+
+## Derived and reference data
+
+`MarketSummary` is display-oriented current state suitable for market tables and
+watchlists. It may combine information from several event types.
+
+`MarketClock` describes whether a market is open and may include its next open
+and close timestamps.
+
+`BarsRequest` extends symbol-and-venue identity with `timeframe` and optional
+historical range and limit fields.
+
+## Event channels
+
+Relay publishes stable channels for trade, quote, bar, order book, market
+summary, and market clock messages. A `RelayMessage<T>` contains the channel and
+normalized `data` without embedding transport-specific metadata.

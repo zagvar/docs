@@ -1,0 +1,62 @@
+---
+title: TradeTicket
+description: Collect and validate market or limit order intent with accessible React controls.
+---
+
+`TradeTicket` composes side, order type, time in force, amount, price, available
+balance, validation, and submission behavior into one accessible form.
+
+```tsx
+import { TradeTicket } from "@zagvar/mosaic-react";
+
+<TradeTicket
+  symbol="BTC/USDT"
+  assetClass="crypto"
+  assetRules={assetRules}
+  cashAvailable={10_000}
+  assetQuantityAvailable={0.5}
+  quoteCurrency="USDT"
+  amountPresets={[25, 50, 75, 100]}
+  onSubmit={reviewOrder}
+/>;
+```
+
+## Required inputs
+
+| Prop | Purpose |
+| --- | --- |
+| `symbol` | Instrument identifier used in the resulting intent |
+| `assetClass` | Instrument asset class |
+| `assetRules` | Supported order behavior and numeric constraints |
+| `cashAvailable` | Displayed quote-currency availability and buy validation input |
+| `assetQuantityAvailable` | Displayed asset availability and sell validation input |
+
+`quoteCurrency` defaults to `USD`.
+
+## Submission
+
+On form submission, Mosaic validates the draft and calls `onSubmit` only with a
+valid `OrderIntent`. The callback may be asynchronous; controls are disabled
+while it is pending and duplicate submissions are prevented.
+
+Use `onValidationIssues` for analytics or application handling of stable issue
+codes. Use `onSubmitError`, `submissionError`, and `isSubmitting` when submission
+state is controlled outside the component.
+
+The default submit label is “Review order.” A typical `onSubmit` handler opens an
+order-review step rather than placing the order immediately.
+
+## State
+
+Use `defaultValue` for uncontrolled initial state. Supply `value` and `onChange`
+for controlled state. `resetOnSubmitSuccess` clears the draft only when the
+submitted instrument and draft scope are still current.
+
+## Styling and messages
+
+`classNames` exposes slots for the root, balance, toggles, fields, presets,
+alerts, submission error, and submit button. `messages` replaces labels and
+validation text without requiring a translation framework.
+
+See [Styling](/docs/mosaic/guides/styling) and
+[Localization](/docs/mosaic/guides/localization).

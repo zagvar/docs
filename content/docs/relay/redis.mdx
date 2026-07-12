@@ -1,0 +1,67 @@
+---
+title: Redis
+description: Use Redis for shared hot market state and cross-process Relay pub/sub.
+---
+
+`@zagvar/relay-redis` implements Relay's cache and event-bus contracts without
+locking applications to a large Redis wrapper API.
+
+## Cache
+
+```ts
+import { RedisMarketDataCache } from "@zagvar/relay-redis";
+
+const cache = new RedisMarketDataCache({
+  client,
+  prefix: "trading",
+  marketSummaryTtlSeconds: 30,
+  marketClockTtlSeconds: 60,
+  barRetention: {
+    default: { maxBars: 500, ttlSeconds: 86_400 },
+    byTimeframe: {
+      "1Day": { maxBars: 365, ttlSeconds: 2_592_000 },
+    },
+  },
+});
+```
+
+The supplied client implements the small `RedisCacheClient` interface. Use a
+thin application adapter around the preferred Redis client when its method
+signatures do not match that interface directly.
+
+Quotes and trades use hashes keyed by normalized symbol and venue. Bars use
+timestamp-scored sorted sets. Order-book snapshots use separate keys for each
+symbol and venue. Summaries use a normalized-symbol hash.
+
+## Event bus
+
+```ts
+import { RedisRelayEventBus } from "@zagvar/relay-redis";
+
+const eventBus = new RedisRelayEventBus({
+  publisher,
+  subscriber,
+  prefix: "trading",
+});
+```
+
+Publisher and subscriber are separate dependencies because Redis subscriber
+connections normally have a dedicated command mode. The bus serializes complete
+`RelayMessage` objects as JSON on namespaced Redis channels.
+
+Always call the unsubscribe function returned by `subscribe` when a consumer is
+disposed.
+
+## Namespacing
+
+`RelayRedisKeys` defaults to the `relay` prefix. Set an application-specific
+prefix when multiple environments or services share a Redis deployment.
+
+The key helper is public for observability and integration, but applications
+should prefer cache and event-bus contracts over reading implementation keys
+directly.
+
+## Storage boundary
+
+Relay Redis is a hot-state layer, not durable history or an audit log. Use a
+database or historical market-data system for long retention and replay.

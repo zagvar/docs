@@ -1,0 +1,62 @@
+---
+title: Operational utilities
+description: Conflate display state, calculate reconnect delays, throttle keyed events, and normalize symbols.
+---
+
+Relay core includes small utilities for common stream-management tasks. They do
+not form a required orchestration framework.
+
+## Market-summary conflation
+
+Busy market tables rarely need every intermediate provider event.
+`MarketSummaryConflator` retains the latest summary for each normalized symbol
+and flushes a batch on a fixed interval.
+
+```ts
+const conflator = new MarketSummaryConflator({
+  intervalMs: 250,
+  onFlush: async (summaries) => {
+    await pipeline.processMarketSummaries(
+      Object.fromEntries(summaries.map((item) => [item.symbol, item])),
+    );
+  },
+  onError: console.error,
+});
+```
+
+Call `flush` for immediate delivery and `close` during shutdown. Updates arriving
+during an active flush enter a new window rather than being discarded.
+
+## Reconnect backoff
+
+`calculateReconnectDelay` returns capped exponential delays. Defaults begin at
+one second, double each attempt, and cap at 30 seconds.
+
+```ts
+const delayMs = calculateReconnectDelay(attempt, {
+  initialDelayMs: 1_000,
+  maxDelayMs: 30_000,
+  multiplier: 2,
+});
+```
+
+Add randomized jitter in the host when many instances might reconnect together.
+
+## Event throttling
+
+`EventThrottle` tracks the last emission time for each application-defined key.
+`shouldEmit` returns whether the current window allows an event. Call `prune`
+periodically when keys are unbounded.
+
+Throttling drops intermediate events. Use it only where that semantic is safe;
+never drop sequence-dependent order-book updates.
+
+## Symbol helpers
+
+`normalizeSymbol` and `normalizeVenue` trim and uppercase identifiers.
+`createMarketDataRequestKey` produces a stable symbol-and-venue key.
+`chunkSymbols` normalizes and splits symbol arrays for providers with subscription
+batch limits.
+
+Provider-specific canonicalization beyond trimming and casing remains the
+adapter's responsibility.

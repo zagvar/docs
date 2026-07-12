@@ -1,0 +1,37 @@
+---
+title: OrderBook
+description: Render an already-synchronized order-book snapshot with selectable price levels.
+---
+
+`OrderBook` renders a complete Mosaic `OrderBookSnapshot`. It does not open a
+socket, fetch a snapshot, or apply updates internally.
+
+```tsx
+<OrderBook
+  snapshot={book}
+  quoteCurrency="USD"
+  layout="stacked"
+  depth={20}
+  showTotals
+  onSelectPrice={(price) => tradeDraft.setLimitPrice(price)}
+/>
+```
+
+## Rendering behavior
+
+- `depth` limits visible levels per side and defaults to 15.
+- `layout` accepts `stacked` or `split`.
+- `showTotals` controls cumulative quantity display.
+- asks render above the spread and bids below it in the stacked layout.
+- depth bars are calculated from cumulative quantities.
+
+When `onSelectPrice` is present, levels become accessible price-selection
+buttons and report `bid` or `ask` through the callback.
+
+## Maintaining the snapshot
+
+Validate incoming snapshots and updates with Mosaic core, then maintain the
+current snapshot with `applyOrderBookUpdate`. On identity mismatch or lost
+sequence continuity, stop applying updates and obtain a fresh snapshot.
+
+For a Relay-backed flow, see [Relay to Mosaic](/docs/guides/relay-to-mosaic).

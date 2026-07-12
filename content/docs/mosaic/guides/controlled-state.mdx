@@ -1,0 +1,52 @@
+---
+title: Controlled state
+description: Own trade-draft state in an application while retaining Mosaic behavior and validation.
+---
+
+Use controlled state when a draft must be shared, persisted, restored, or
+coordinated with other application UI.
+
+```tsx
+const [draft, setDraft] = useState<TradeDraftValue>({
+  side: "buy",
+  type: "limit",
+  tif: "day",
+});
+
+<TradeTicket
+  symbol="AAPL"
+  assetClass="equity"
+  assetRules={rules}
+  cashAvailable={cashAvailable}
+  assetQuantityAvailable={sharesAvailable}
+  value={draft}
+  onChange={setDraft}
+  onSubmit={reviewOrder}
+/>;
+```
+
+With `value`, the host is the source of truth and must commit the complete next
+value received by `onChange`.
+
+## Headless composition
+
+Use `useTradeDraft` directly when building a custom form:
+
+```tsx
+const trade = useTradeDraft({
+  symbol,
+  assetClass,
+  assetRules,
+  cashAvailable,
+  assetQuantityAvailable,
+  value: draft,
+  onChange: setDraft,
+});
+```
+
+The hook exposes field setters, `applyPercent`, the complete `draft`, validation
+`context`, current `validation`, and `reset`.
+
+Changing instrument identity clears instrument-specific amounts. Changing order
+type removes fields that are no longer relevant. This prevents hidden stale
+values from leaking into the eventual intent.

@@ -1,4 +1,11 @@
 {
   "title": "Mosaic",
-  "pages": ["index", "installation", "order-lifecycle"]
+  "pages": [
+    "index",
+    "installation",
+    "core-concepts",
+    "order-lifecycle",
+    "components",
+    "guides"
+  ]
 }

@@ -1,0 +1,102 @@
+---
+title: WebSocket protocol
+description: Hydrate clients and deliver subscription-filtered Relay events over Node ws.
+---
+
+`@zagvar/relay-ws` exposes transport-independent client sessions and helpers for
+the Node `ws` package.
+
+## Start a server
+
+```ts
+import { createRelayNodeWsServer } from "@zagvar/relay-ws";
+
+const server = createRelayNodeWsServer({
+  port: 8080,
+  eventBus,
+  hydrator,
+  onError: console.error,
+});
+```
+
+Use `attachRelayNodeWsConnection` to add Relay behavior to an existing `ws`
+connection. Use `RelayClientSession` and the minimal `RelaySocket` interface for
+another runtime or framework.
+
+## Client messages
+
+Specialized subscriptions use exact normalized request identity:
+
+```json
+{
+  "type": "subscribe_quotes",
+  "quotes": [{ "symbol": "BTC/USD", "venue": "COINBASE" }]
+}
+```
+
+Supported subscribe/unsubscribe pairs are:
+
+- `subscribe_market_summaries` with `symbols`
+- `subscribe_quotes` with `quotes`
+- `subscribe_trades` with `trades`
+- `subscribe_bars` with bar requests including `timeframe`
+- `subscribe_order_books` with `orderBooks`
+- `subscribe_channels` with low-level channels
+
+The same field is used by the corresponding unsubscribe message.
+
+## Hydration
+
+```json
+{
+  "type": "hydrate",
+  "request": {
+    "quotes": [{ "symbol": "BTC/USD", "venue": "COINBASE" }],
+    "includeMarketClock": true
+  }
+}
+```
+
+Hydration requires a configured `MarketDataHydrator`. The response is:
+
+```json
+{
+  "type": "hydration",
+  "data": {}
+}
+```
+
+`data` contains the available cached groups requested by the client.
+
+## Live messages
+
+Subscribed events are returned as:
+
+```json
+{
+  "type": "relay_message",
+  "data": {
+    "channel": "quote",
+    "data": {}
+  }
+}
+```
+
+The inner `data` is the normalized market event. Quote, trade, bar, order-book,
+and market-summary delivery is filtered by specialized subscription state.
+Market-clock delivery uses channel subscription.
+
+## Validation and closure
+
+Incoming payloads must be text JSON. Binary messages close with code `1003`.
+Malformed or unsupported client messages are reported through `onError` and
+close with code `1008`. Session startup failures close with `1011`.
+
+Closing a session removes its event-bus subscriptions and clears its tracked
+market-data subscriptions.
+
+## Security boundary
+
+The package does not authenticate connections or enforce entitlements. Perform
+those checks before attaching a Relay session, and restrict which symbols,
+venues, and channels an authenticated client may request.

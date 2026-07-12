@@ -1,0 +1,27 @@
+---
+title: QuoteDisplay
+description: Display sanitized top-of-book prices and make them selectable for order entry.
+---
+
+`QuoteDisplay` renders the best bid and ask, optional quantities and last price,
+and the calculated spread.
+
+```tsx
+<QuoteDisplay
+  quote={quote}
+  quoteCurrency="USD"
+  priceFractionDigits={2}
+  quantityFractionDigits={8}
+  onSelectPrice={(price) => tradeDraft.setLimitPrice(price)}
+/>
+```
+
+The `quote` must satisfy Mosaic's `MarketQuote` contract. The component formats
+numbers using the current React Aria locale.
+
+When `onSelectPrice` is provided, bid, ask, and last prices become accessible
+buttons. The callback identifies the selected value and its `bid`, `ask`, or
+`last` kind. Without the callback, values remain non-interactive display rows.
+
+`isDisabled` disables selection without removing market information. Use the
+message object to localize labels and accessible selection text.

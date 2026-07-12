@@ -1,0 +1,49 @@
+---
+title: OrderReview
+description: Present an order intent, estimates, warnings, fees, and confirmation state.
+---
+
+`OrderReview` renders a review-ready `OrderSummary`. It does not force a modal,
+sheet, or route, so the host can choose the surrounding presentation.
+
+```tsx
+<OrderReview
+  summary={summary}
+  quoteCurrency="USDT"
+  marketReferenceDisplay="full"
+  isConfirming={isConfirming}
+  confirmationError={confirmationError}
+  onCancel={closeReview}
+  onRefreshPreview={refreshPreview}
+  onConfirm={confirmOrder}
+/>
+```
+
+## Summary content
+
+The component can display:
+
+- side, type, time in force, quantity, notional, and limit price
+- estimated fill price and notional
+- market reference, mode, source, and observation time
+- fee estimates
+- extended-hours state
+- warnings derived by `createOrderSummary`
+
+`marketReferenceDisplay` accepts `hidden`, `price`, or `full` and defaults to
+`hidden`.
+
+## Preview expiry
+
+When the summary contains `preview_expired`, confirmation is disabled. Providing
+`onRefreshPreview` adds a refresh action. The host fetches a new backend preview,
+creates a new summary, and passes it back to the component.
+
+## Confirmation state
+
+`isConfirming` and `isRefreshingPreview` set busy state and disable controls.
+`confirmationError` accepts either a localized string or a broker-neutral
+`OrderExecutionError`, which is mapped through the message object.
+
+`onConfirm` receives the unchanged `OrderIntent`, not the summary or its
+estimates.

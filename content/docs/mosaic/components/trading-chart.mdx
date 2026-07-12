@@ -1,0 +1,33 @@
+---
+title: TradingChart
+description: Render normalized candles with an optional volume series using Lightweight Charts.
+---
+
+`TradingChart` wraps Lightweight Charts for Mosaic `MarketCandle` data.
+
+```tsx
+<TradingChart
+  symbol="BTC/USD"
+  candles={candles}
+  height={420}
+  showVolume
+  theme="dark"
+/>
+```
+
+The component owns chart creation, data updates, resize handling, and cleanup. It
+does not fetch historical or realtime data.
+
+`height` controls the chart area, `showVolume` adds the volume series, and
+`theme` accepts `light` or `dark`. The header and TradingView attribution can be
+localized and styled through message and class-name props.
+
+Install the optional peer when using this component:
+
+```bash
+pnpm add lightweight-charts
+```
+
+Keep candle arrays normalized and ordered before passing them to the component.
+The application remains responsible for merging historical hydration with live
+bar updates.

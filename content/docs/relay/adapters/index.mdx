@@ -1,0 +1,24 @@
+---
+title: Provider adapters
+description: Translate provider protocols and payloads into normalized Relay events.
+---
+
+An adapter is the provider-specific edge of Relay. It should own:
+
+- credentials and provider connection details
+- authentication and control messages
+- raw payload parsing and runtime validation
+- symbol and venue mapping
+- unit and timestamp normalization
+- translation into Relay contracts
+- provider-specific subscription limits and recovery rules
+
+It should not expose raw provider shapes to caches, event buses, WebSocket
+clients, or frontend applications.
+
+The current reference implementation is the
+[Alpaca stock adapter](/docs/relay/adapters/alpaca).
+
+When building another adapter, keep pure parsing and mapping functions separate
+from socket lifecycle. This makes normalization testable without credentials or
+network access.

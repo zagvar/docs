@@ -1,0 +1,75 @@
+---
+title: Alpaca
+description: Normalize Alpaca stock trades, quotes, and bars into Relay market events.
+---
+
+`@zagvar/relay-adapter-alpaca` supports Alpaca's stock WebSocket stream and also
+serves as a reference adapter implementation.
+
+## Supported data
+
+- stock trades
+- best bid and ask quotes
+- minute, updated, and daily bars
+
+The adapter does not currently implement Relay market summaries, historical bar
+requests, market clocks, or order-book snapshots and updates.
+
+## Node WebSocket client
+
+```ts
+import { createAlpacaNodeWsStockClient } from "@zagvar/relay-adapter-alpaca";
+
+const connection = createAlpacaNodeWsStockClient({
+  feed: "iex",
+  credentials: {
+    keyId: process.env.ALPACA_API_KEY_ID ?? "",
+    secretKey: process.env.ALPACA_API_SECRET_KEY ?? "",
+  },
+  onMarketEvent: (event) => pipeline.processEvent(event),
+  onError: console.error,
+});
+
+await connection.client.subscribe({
+  trades: ["AAPL"],
+  quotes: ["AAPL"],
+  bars: ["AAPL"],
+});
+```
+
+Authentication is sent automatically when the socket opens unless
+`autoAuthenticate` is false. Wait for Alpaca's authentication success message
+before subscribing in production orchestration.
+
+Supported feed names include `iex`, `sip`, `delayed_sip`, `test`, `boats`, and
+`overnight`. Feed access depends on the Alpaca account.
+
+## Pure parsing and mapping
+
+Use `parseAlpacaStockMarketEvents` to convert a raw WebSocket batch without
+opening a connection. Lower-level parser, type-guard, and mapper exports are
+available for custom integrations and focused tests.
+
+## Normalization details
+
+- Alpaca field names become full Relay names.
+- trade exchange code becomes the event `venue`.
+- quote bid and ask exchange codes become `bidVenue` and `askVenue`.
+- stock quote sizes are converted from round lots to share quantities using a
+  lot size of 100.
+- trade and quote timestamps remain provider ISO strings.
+- minute and updated bars use timeframe `1Min`; daily bars use `1Day`.
+
+Quote stream identity may be consolidated while its bid and ask identify their
+contributing exchanges.
+
+## Smoke test
+
+The repository includes a manual smoke script for Alpaca's test stream:
+
+```bash
+pnpm --filter @zagvar/relay-adapter-alpaca smoke:stocks
+```
+
+The default test configuration uses the `v2/test` stream and `FAKEPACA`. Keep
+credentials in local environment files and never expose them to the browser.

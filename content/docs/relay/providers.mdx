@@ -1,0 +1,77 @@
+---
+title: Providers and capabilities
+description: Describe provider features and implement provider-neutral snapshot and live seams.
+---
+
+Providers differ in asset coverage, historical APIs, clocks, snapshots, and live
+stream types. Relay makes those differences explicit through capabilities.
+
+## Capabilities
+
+`ProviderCapabilities` can declare:
+
+- market summaries
+- historical bars
+- order-book snapshots
+- market clock
+- live trades
+- live bars
+- live quotes
+- live order books
+
+```ts
+import {
+  PROVIDER_CAPABILITY,
+  assertProviderCapability,
+} from "@zagvar/relay-core";
+
+assertProviderCapability(
+  provider.name,
+  provider.capabilities,
+  PROVIDER_CAPABILITY.liveQuotes,
+);
+```
+
+Use `hasProviderCapability` for optional branching and
+`assertProviderCapability` when the application cannot proceed without a
+feature.
+
+## Provider interface
+
+`MarketDataProvider` defines market summaries and historical bars, plus optional
+order-book snapshot, market-clock, and live-connection methods.
+
+```ts
+const provider: MarketDataProvider = {
+  name: "example",
+  capabilities: {
+    historicalBars: true,
+    liveQuotes: true,
+  },
+  getMarketSummaries,
+  getBars,
+  connectLive,
+};
+```
+
+The interface is an application seam, not an automatic runtime. The host still
+decides when to call methods, how to retry, and how to route normalized events
+into the pipeline.
+
+## Live connections
+
+`connectLive` receives initial symbols, an `onEvent` handler, and optional error
+handler. The resulting `LiveMarketConnection` supports subscribe, unsubscribe,
+and close.
+
+Adapters should emit only normalized `MarketEvent` values through `onEvent`.
+Authentication and raw control messages stay inside the adapter.
+
+## Snapshot recovery
+
+Applications consuming incremental order books should require both live order
+books and snapshot support, or provide another snapshot source. A live-only
+stream cannot safely recover after a sequence gap without provider-specific
+recovery state.
+
+See [Order books](/docs/relay/order-books).
