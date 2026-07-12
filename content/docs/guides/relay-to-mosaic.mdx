@@ -1,0 +1,171 @@
+---
+title: Relay to Mosaic
+description: Map normalized backend market data into display-safe frontend state.
+---
+
+Relay and Mosaic share market-data meaning, but the application owns the
+transport and mapping between them.
+
+```txt
+Relay WebSocket message
+        ↓ parse and authorize
+application market-data store
+        ↓ select and sanitize
+Mosaic contract
+        ↓
+Mosaic component
+```
+
+This explicit seam is useful. It prevents backend topology, private provider
+details, and transport state from leaking into reusable UI components.
+
+## 1. Hydrate and subscribe
+
+After opening the application WebSocket, subscribe to the precise streams the
+screen needs and request cached state:
+
+```ts
+socket.send(
+  JSON.stringify({
+    type: "subscribe_quotes",
+    quotes: [{ symbol: "BTC/USD", venue: "COINBASE" }],
+  }),
+);
+
+socket.send(
+  JSON.stringify({
+    type: "hydrate",
+    request: {
+      quotes: [{ symbol: "BTC/USD", venue: "COINBASE" }],
+      orderBooks: [{ symbol: "BTC/USD", venue: "COINBASE" }],
+    },
+  }),
+);
+```
+
+The application should validate incoming messages before storing them. Relay
+normalization does not remove the need to treat network input as untrusted in the
+browser.
+
+## 2. Map a Relay quote
+
+A Relay quote includes backend market identity and transport event type. Mosaic's
+`MarketQuote` contains display-safe market fields.
+
+```ts
+import { marketQuoteSchema } from "@zagvar/mosaic-core";
+
+function toMosaicQuote(quote: RelayMarketQuote) {
+  return marketQuoteSchema.parse({
+    symbol: quote.symbol,
+    assetClass: quote.assetClass,
+    bidPrice: quote.bidPrice,
+    bidQuantity: quote.bidQuantity,
+    askPrice: quote.askPrice,
+    askQuantity: quote.askQuantity,
+    timestamp: quote.timestamp,
+    displaySource: quote.venue,
+  });
+}
+```
+
+The example converts venue into public attribution. A real product may map a
+venue code to a human-readable label, omit it, or identify a consolidated feed.
+Do not expose credentials, endpoints, internal service names, or account data in
+display contracts.
+
+Render the mapped state:
+
+```tsx
+<QuoteDisplay
+  quote={quote}
+  quoteCurrency="USD"
+  onSelectPrice={(price) => tradeDraft.setLimitPrice(price)}
+/>
+```
+
+## 3. Map and maintain an order book
+
+The normalized level shapes and zero-quantity deletion semantics align closely.
+The application should still validate the frontend contract explicitly:
+
+```ts
+import {
+  applyOrderBookUpdate,
+  orderBookSnapshotSchema,
+  orderBookUpdateSchema,
+} from "@zagvar/mosaic-core";
+
+const initialBook = orderBookSnapshotSchema.parse({
+  ...relaySnapshot,
+  displaySource: relaySnapshot.venue,
+});
+
+const update = orderBookUpdateSchema.parse(relayUpdate);
+const result = applyOrderBookUpdate(initialBook, update, { depth: 50 });
+```
+
+Install a complete snapshot before applying live updates. Mosaic checks the full
+market identity and sequence continuity before applying an update. If
+reconciliation reports an identity mismatch, stale sequence, or sequence gap,
+stop updating the displayed book and request fresh hydration.
+
+```tsx
+<OrderBook
+  snapshot={book}
+  quoteCurrency="USD"
+  depth={20}
+  onSelectPrice={(price) => tradeDraft.setLimitPrice(price)}
+/>
+```
+
+## 4. Derive an order market reference
+
+When a user moves from market data into an order review, select the relevant
+side of the market:
+
+```ts
+const reference = {
+  symbol: quote.symbol,
+  assetClass: quote.assetClass,
+  price: order.side === "buy" ? quote.askPrice : quote.bidPrice,
+  kind: order.side === "buy" ? "ask" : "bid",
+  timestamp: quote.timestamp,
+  receivedAt: new Date().toISOString(),
+  mode: "real_time",
+  displaySource: quote.displaySource,
+} as const;
+```
+
+Pass this sanitized reference to `createOrderSummary`. It supports estimates and
+staleness warnings, but it does not guarantee execution price.
+
+## 5. Keep order execution separate
+
+Do not send a Mosaic `OrderIntent` through Relay's market-data pipeline. Submit
+it to the application's authenticated trading API:
+
+```txt
+Relay → market-data state → Mosaic display
+
+Mosaic order intent → trading API → preview and execution provider
+```
+
+The backend must revalidate balances, buying power, permissions, product rules,
+fees, preview validity, and market state before routing the confirmed order.
+
+## Production considerations
+
+The host application still needs policies for:
+
+- reconnect and resubscription
+- hydration/live-event race handling
+- message schema versioning
+- market-data entitlements
+- delayed, indicative, and realtime labelling
+- venue code display and consolidated feeds
+- stale data and disconnected UI states
+- order-book resynchronization
+
+Mosaic and Relay supply the reusable primitives. These policies remain explicit
+because they depend on the product and provider environment.

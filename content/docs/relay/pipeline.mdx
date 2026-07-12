@@ -1,0 +1,99 @@
+---
+title: Market-data pipeline
+description: Normalize provider events, update hot state, and publish realtime messages.
+---
+
+`MarketDataPipeline` is the central cache-and-publish coordinator in Relay core.
+It accepts provider-neutral events rather than raw provider payloads.
+
+```txt
+raw provider message
+        ↓ adapter parsing and normalization
+Relay MarketEvent
+        ↓ MarketDataPipeline
+   cache write
+        ↓
+event-bus publish
+```
+
+The ordering is intentional: Relay writes the cache before publishing the live
+event. A consumer reacting to the published message can therefore read state that
+already includes that event.
+
+## Construct a pipeline
+
+```ts
+import {
+  MarketDataPipeline,
+  MemoryMarketDataCache,
+  MemoryRelayEventBus,
+} from "@zagvar/relay-core";
+
+const cache = new MemoryMarketDataCache();
+const eventBus = new MemoryRelayEventBus();
+const pipeline = new MarketDataPipeline({ cache, eventBus });
+```
+
+The pipeline depends only on the `MarketDataCache` and `RelayEventBus`
+interfaces. Replace the in-memory implementations with Redis or application
+implementations without changing event processing.
+
+## Process normalized events
+
+Provider adapters should normalize symbols, venue identity, field names, units,
+and timestamps before calling `processEvent`:
+
+```ts
+await pipeline.processEvent({
+  type: "quote",
+  symbol: "BTC/USD",
+  assetClass: "crypto",
+  venue: "COINBASE",
+  bidPrice: 68_249.75,
+  bidQuantity: 0.8,
+  askPrice: 68_250.5,
+  askQuantity: 1.1,
+  timestamp: "2026-07-13T01:30:00.000Z",
+});
+```
+
+The event type determines both cache behavior and event channel:
+
+| Event | Cache action | Published channel |
+| --- | --- | --- |
+| `quote` | Replace latest quote for symbol and venue | `quote` |
+| `trade` | Replace latest trade for symbol and venue | `trade` |
+| `bar` | Append to symbol, venue, and timeframe series | `bar` |
+| `order_book_snapshot` | Replace the complete cached book | `order_book` |
+| `order_book_update` | Reconcile into cached snapshot | `order_book` |
+
+Market summaries and the market clock use the dedicated
+`processMarketSummary`, `processMarketSummaries`, and `processMarketClock`
+methods.
+
+## Relay messages
+
+Published values are wrapped by `createRelayMessage` with their channel and
+data. The event bus is responsible for distribution; downstream consumers such
+as `RelayClientSession` decide which subscribed clients receive each message.
+
+This separation prevents the provider connection from knowing about WebSocket
+sessions or transport details.
+
+## Order-book failures
+
+Order-book updates require more coordination than replaceable quotes and trades.
+The pipeline loads the current snapshot, applies the update, stores the new
+snapshot, and only then publishes the original update.
+
+If there is no snapshot, identity does not match, or sequence continuity fails,
+the pipeline throws `OrderBookPipelineError`. The application should stop
+accepting incremental updates for that book and obtain a fresh provider snapshot.
+
+See [Order books](/docs/relay/order-books) for the complete synchronization flow.
+
+## Error ownership
+
+Relay does not silently swallow cache, event-bus, or reconciliation failures.
+The service integrating the pipeline should decide how to log, retry, reconnect,
+or resynchronize based on its operational requirements.

@@ -1,0 +1,85 @@
+---
+title: Mosaic
+description: Accessible, composable building blocks for broker- and exchange-neutral trading interfaces.
+---
+
+Mosaic is the frontend foundation of the Zagvar ecosystem. It separates reusable
+trading behavior from application branding, data fetching, and backend policy.
+
+<Cards>
+  <Card
+    title="Install Mosaic"
+    description="Add the framework-free core or accessible React components to an application."
+    href="/docs/mosaic/installation"
+  />
+  <Card
+    title="Build with Relay"
+    description="Understand the application boundary between Relay events and Mosaic props."
+    href="/docs/guides"
+  />
+</Cards>
+
+## Packages
+
+| Package | Purpose |
+| --- | --- |
+| `@zagvar/mosaic-core` | Framework-free schemas, validation, order preparation, summaries, and reducers |
+| `@zagvar/mosaic-react` | Accessible React components and state hooks |
+
+## What Mosaic provides
+
+- equity and crypto order rules
+- market and limit order tickets
+- quantity and notional order entry
+- precision, tick-size, lot-size, balance, and boundary validation
+- time-in-force selection
+- controlled and uncontrolled trade-draft state
+- order review, warnings, fee estimates, and confirmation states
+- quote, recent-trade, chart, and order-book presentation
+- snapshot and incremental order-book reconciliation
+- localizable messages and locale-aware formatting
+- explicit styling slots for integration with a host design system
+
+## Basic composition
+
+```tsx
+import { TradeTicket } from "@zagvar/mosaic-react";
+
+<TradeTicket
+  symbol="BTC/USDT"
+  assetClass="crypto"
+  assetRules={assetRules}
+  cashAvailable={10_000}
+  assetQuantityAvailable={0.5}
+  quoteCurrency="USDT"
+  onSubmit={(orderIntent) => setOrderForReview(orderIntent)}
+/>;
+```
+
+`TradeTicket` produces a validated order intent. The application should obtain a
+server-authoritative preview, render it with `OrderReview`, and submit the
+confirmed order through its own backend.
+
+## Behavior, not branding
+
+Mosaic provides semantic structure, accessible interaction, validation, and
+state behavior. The host application supplies visual design through component
+class-name slots.
+
+This allows Mosaic to work with plain CSS, CSS Modules, Tailwind CSS,
+vanilla-extract, Panda, Emotion, shadcn-style utilities, and established company
+design systems.
+
+## Accessibility and localization
+
+Mosaic uses semantic HTML and React Aria for keyboard interaction, focus
+behavior, labeling, validation state, and assistive-technology support.
+Applications remain responsible for accessible styling and color contrast.
+
+Components accept message objects rather than requiring a translation framework.
+React Aria locale context supplies locale-aware number and date formatting.
+
+<Callout type="info">
+  Mosaic is UI infrastructure. It is not a broker, exchange, execution system,
+  or source of financial advice.
+</Callout>

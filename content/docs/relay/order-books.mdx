@@ -1,0 +1,136 @@
+---
+title: Order books
+description: Maintain snapshot-based depth safely across provider, cache, pub/sub, and clients.
+---
+
+An order book is stateful. Unlike a latest quote, an incremental depth update is
+not meaningful unless it is applied to the correct preceding state.
+
+Relay models two event types:
+
+- `OrderBookSnapshot` — complete state at a point in time
+- `OrderBookUpdate` — changed levels relative to existing state
+
+## Normalized book semantics
+
+A snapshot contains bids ordered from highest to lowest price and asks ordered
+from lowest to highest price. Each level represents aggregated resting quantity:
+
+```ts
+const snapshot = {
+  type: "order_book_snapshot",
+  symbol: "BTC/USD",
+  assetClass: "crypto",
+  venue: "COINBASE",
+  bids: [{ price: 68_249.75, quantity: 0.8 }],
+  asks: [{ price: 68_250.5, quantity: 1.1 }],
+  timestamp: "2026-07-13T01:30:00.000Z",
+  sequence: 120,
+};
+```
+
+For update levels:
+
+- positive quantity inserts or replaces a price level
+- zero quantity removes a price level
+- `reset: true` discards existing levels and treats the update as replacement
+  state
+
+Providers that expose continuity may populate `sequence` and
+`previousSequence`. Providers without sequence information may omit them.
+
+## Reconcile locally
+
+```ts
+import { applyOrderBookUpdate } from "@zagvar/relay-core";
+
+const result = applyOrderBookUpdate(snapshot, update, { depth: 50 });
+
+if (!result.applied) {
+  resynchronize(result.reason);
+} else {
+  useSnapshot(result.snapshot);
+}
+```
+
+The reducer is immutable and deterministic. It validates that snapshot and
+update identities match, rejects an update whose sequence is not newer, and
+rejects a `previousSequence` that does not match the current snapshot.
+
+Possible failure reasons are:
+
+| Reason | Meaning |
+| --- | --- |
+| `instrument_mismatch` | Symbol, asset class, venue, base asset, or quote asset differs |
+| `stale_sequence` | Update sequence is not newer than the snapshot |
+| `sequence_gap` | Update does not follow the current sequence |
+
+The optional `depth` limit retains only the best requested number of levels per
+side after reconciliation.
+
+## Pipeline behavior
+
+For a snapshot, `MarketDataPipeline` stores the complete book and publishes the
+snapshot event.
+
+For an incremental update, it:
+
+1. loads the cached snapshot for the exact symbol and venue
+2. rejects the update if the snapshot is missing
+3. applies identity and sequence checks
+4. stores the resulting complete snapshot
+5. publishes the original incremental update
+
+Publishing the original update keeps realtime messages compact while the cache
+continues to hold complete hydration state.
+
+## Recovery policy
+
+`OrderBookPipelineError` reports `snapshot_missing`, `instrument_mismatch`,
+`stale_sequence`, or `sequence_gap`.
+
+When one occurs, the application should:
+
+1. stop applying incremental updates for that symbol and venue
+2. fetch a fresh snapshot from a provider that supports order-book snapshots
+3. buffer or discard updates according to provider sequence rules
+4. install the new snapshot through the pipeline
+5. resume only from a verified continuation point
+
+Relay does not invent a universal buffering algorithm because provider snapshot
+and sequence protocols differ.
+
+## Client hydration and subscription
+
+A WebSocket client can request cached state and subscribe to subsequent events:
+
+```json
+{
+  "type": "subscribe_order_books",
+  "orderBooks": [{ "symbol": "BTC/USD", "venue": "COINBASE" }]
+}
+```
+
+```json
+{
+  "type": "hydrate",
+  "request": {
+    "orderBooks": [{ "symbol": "BTC/USD", "venue": "COINBASE" }]
+  }
+}
+```
+
+Subscription matching uses exact normalized symbol-and-venue identity. A
+Coinbase subscription does not receive a Binance book for the same symbol.
+
+The browser should install a complete hydrated snapshot before applying
+incremental updates. It should use the same continuity checks and request a new
+snapshot whenever local continuity is lost.
+
+## Presenting with Mosaic
+
+Relay and Mosaic intentionally expose compatible snapshot and update semantics.
+The application can sanitize public attribution, validate the Mosaic schema, and
+pass the resulting snapshot to Mosaic's `OrderBook` component.
+
+See [Relay to Mosaic](/docs/guides/relay-to-mosaic) for the frontend mapping.

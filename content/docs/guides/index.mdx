@@ -1,0 +1,107 @@
+---
+title: Build with Mosaic and Relay
+description: Use Relay and Mosaic together without coupling their package boundaries.
+---
+
+Relay and Mosaic address opposite sides of a common trading-platform boundary:
+
+```txt
+provider payloads
+      ↓
+Relay normalization, cache, and delivery
+      ↓
+application transport and state layer
+      ↓
+Mosaic component props and order interactions
+```
+
+They share compatible market-data semantics, but they are not plug-and-play
+coupled packages. The application owns the connection deliberately.
+
+## Why keep an application boundary?
+
+A direct Relay-to-Mosaic dependency would force backend transport decisions into
+the UI library and frontend presentation decisions into the data service. It
+would also make either project harder to adopt independently.
+
+The application boundary is where a product can:
+
+- authenticate and authorize the client
+- enforce market-data entitlements
+- choose consolidated or venue-specific streams
+- select and transform fields for the interface
+- maintain reconnecting client state
+- combine market data with account and product state
+- apply product-specific labels and display conventions
+
+## Example mapping
+
+A Relay quote may arrive over the application WebSocket as normalized data:
+
+```ts
+const relayQuote = {
+  type: "quote",
+  symbol: "BTC/USD",
+  assetClass: "crypto",
+  venue: "COINBASE",
+  bidPrice: 68_249.75,
+  bidQuantity: 0.8,
+  askPrice: 68_250.5,
+  askQuantity: 1.1,
+  timestamp: "2026-07-12T01:30:00.000Z",
+};
+```
+
+Application state can map the presentation-relevant values into Mosaic's
+display-safe quote contract:
+
+```tsx
+const mosaicQuote = {
+  symbol: relayQuote.symbol,
+  assetClass: relayQuote.assetClass,
+  bidPrice: relayQuote.bidPrice,
+  bidQuantity: relayQuote.bidQuantity,
+  askPrice: relayQuote.askPrice,
+  askQuantity: relayQuote.askQuantity,
+  timestamp: relayQuote.timestamp,
+  displaySource: relayQuote.venue,
+};
+
+<QuoteDisplay
+  quote={mosaicQuote}
+  quoteCurrency="USD"
+/>
+```
+
+The mapping deliberately turns the venue into public display attribution instead
+of leaking backend transport details. The important boundary is semantic:
+provider-specific payloads are normalized on the backend, while application
+state controls what reaches the UI.
+
+## Order flow remains separate
+
+Relay is a market-data foundation, not an order-execution backend. A Mosaic order
+intent should go to the application’s authenticated trading API, where the
+backend revalidates it and performs any preview, risk, compliance, routing, and
+execution work.
+
+```txt
+Mosaic order intent
+        ↓
+application trading API
+        ↓
+authoritative validation and preview
+        ↓
+Mosaic order review
+        ↓
+confirmed submission
+```
+
+Market-data delivery and order execution may share application infrastructure,
+but they should not be treated as the same authority boundary.
+
+## What comes next
+
+The integration guides will expand with complete venue-aware quote delivery,
+snapshot-first order-book synchronization, reconnect behavior, and a full demo
+application using both projects.

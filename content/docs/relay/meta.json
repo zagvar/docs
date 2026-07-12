@@ -1,0 +1,10 @@
+{
+  "title": "Relay",
+  "pages": [
+    "index",
+    "installation",
+    "pipeline",
+    "caching-and-hydration",
+    "order-books"
+  ]
+}

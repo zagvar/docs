@@ -1,0 +1,74 @@
+---
+title: Relay
+description: Provider-neutral market-data ingestion, normalization, caching, pub/sub, and realtime delivery.
+---
+
+Relay is the backend market-data foundation of the Zagvar ecosystem. It provides
+composable infrastructure for moving normalized market events from upstream
+providers to application clients.
+
+<Cards>
+  <Card
+    title="Install Relay"
+    description="Choose the core, Redis, WebSocket, and provider-adapter packages your service needs."
+    href="/docs/relay/installation"
+  />
+  <Card
+    title="Build with Mosaic"
+    description="Map Relay market data into a Mosaic-powered trading interface."
+    href="/docs/guides"
+  />
+</Cards>
+
+## Packages
+
+| Package | Purpose |
+| --- | --- |
+| `@zagvar/relay-core` | Contracts, capabilities, in-memory primitives, hydration, pipelines, and order-book reconciliation |
+| `@zagvar/relay-redis` | Redis-backed market-data cache and event bus |
+| `@zagvar/relay-ws` | Cached hydration and live delivery over WebSockets |
+| `@zagvar/relay-adapter-alpaca` | Alpaca stock-stream adapter and reference provider integration |
+
+## Data flow
+
+```txt
+provider adapter
+      ↓
+normalized Relay event
+      ↓
+MarketDataPipeline
+      ├── MarketDataCache
+      └── RelayEventBus
+                ↓
+         WebSocket clients
+```
+
+Clients can hydrate from cached state before subscribing to live updates. Cache,
+event bus, transport, and provider integration remain separate contracts so an
+application can replace each layer independently.
+
+## Supported market data
+
+Relay currently models:
+
+- latest trades
+- best bid and ask quotes
+- OHLCV bars
+- derived market summaries
+- market clocks
+- complete order-book snapshots
+- incremental order-book updates
+
+Quotes, trades, bars, and order books are venue-aware. Provider payloads are
+normalized into readable field names, instrument-unit quantities, and ISO 8601
+timestamps before entering the pipeline.
+
+## Scope
+
+Relay focuses on common market-data infrastructure. It does not implement
+authentication, accounts, balances, risk, custody, order management, routing,
+execution, or compliance workflows.
+
+Those features depend on the application’s product vision, providers,
+jurisdiction, and operational model. Relay gives them a stable market-data
+foundation without attempting to prescribe the rest of the backend.

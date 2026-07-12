@@ -1,0 +1,60 @@
+---
+title: Installation
+description: Add Mosaic packages to a React trading application.
+---
+
+<Callout type="warn" title="Source-first pre-release">
+  Mosaic packages are not published to npm yet. Use the repository and demo to
+  explore the current API until the first package release.
+</Callout>
+
+## Requirements
+
+- React 18.3 or React 19
+- a React application with its own styling system
+- pnpm 11 when working in the Mosaic repository
+
+## Explore the repository
+
+```bash
+git clone https://github.com/zagvar/mosaic.git
+cd mosaic
+pnpm install
+pnpm dev
+```
+
+The demo includes an equity trade ticket, a crypto order book, mocked HTTP and
+WebSocket market data, selectable quote and book prices, and order review.
+
+## Choose a package
+
+Use `@zagvar/mosaic-core` when you need framework-independent trading contracts,
+schemas, validation, summaries, decimal helpers, or order-book reconciliation.
+
+Use `@zagvar/mosaic-react` when you need accessible components and React state
+hooks. Install `@zagvar/mosaic-core` alongside it when your application imports
+the framework-independent contracts and utilities directly.
+
+Once the packages are published, installation will use the standard workspace
+package command:
+
+```bash
+pnpm add @zagvar/mosaic-react
+```
+
+That command is shown for the upcoming package release and is not expected to
+resolve from npm yet.
+
+## Host application responsibilities
+
+Before composing components, identify where your application will provide:
+
+- normalized instrument and market-data state
+- asset-specific order rules
+- account balances and buying power
+- server-authoritative order previews
+- order submission and lifecycle state
+- localized messages and application styling
+
+Mosaic intentionally receives these concerns through props and application
+state rather than choosing providers or backend architecture for you.

@@ -1,0 +1,155 @@
+---
+title: Order lifecycle
+description: Move from an editable trade draft to authoritative preview, review, and confirmed submission.
+---
+
+Mosaic models the frontend portion of an order flow without pretending to be an
+execution backend.
+
+```txt
+editable draft
+      ↓
+frontend validation
+      ↓
+exact order intent
+      ↓
+backend preview
+      ↓
+review summary
+      ↓
+confirmed backend submission
+```
+
+Each step has a different authority. Keeping them distinct prevents an estimate,
+stale quote, or UI state object from accidentally becoming the broker submission
+payload.
+
+## 1. Collect a draft
+
+`TradeTicket` and `useTradeDraft` maintain an `OrderDraft`. A draft can change as
+the user switches side, order type, quantity or notional entry, time in force,
+limit price, and extended-hours preference.
+
+The host supplies the current instrument rules and account availability:
+
+```tsx
+<TradeTicket
+  symbol="BTC/USDT"
+  assetClass="crypto"
+  assetRules={assetRules}
+  cashAvailable={10_000}
+  assetQuantityAvailable={0.5}
+  quoteCurrency="USDT"
+  onSubmit={reviewOrder}
+/>
+```
+
+These values improve the user experience, but the browser is not trusted to
+authorize a trade.
+
+## 2. Create an exact order intent
+
+When the form is submitted, `TradeTicket` calls `createOrderIntent`. The function
+validates the draft against:
+
+- supported order types and time-in-force values
+- quantity or notional exclusivity
+- minimum and maximum values
+- price and quantity precision
+- tick size, lot size, and quote increments
+- displayed cash or asset availability
+- extended-hours rules
+
+Invalid drafts return stable issue codes that the UI can localize. Valid drafts
+produce an `OrderIntent`.
+
+Intent creation never rounds, snaps, or repairs invalid numeric values. It only
+removes fields irrelevant to the selected order type—for example, a stale limit
+price from a market order.
+
+## 3. Request an authoritative preview
+
+Use the `onSubmit` callback to begin review rather than placing the order
+immediately:
+
+```tsx
+async function reviewOrder(order: OrderIntent) {
+  const quotePreview = await tradingApi.previewOrder(order);
+
+  setSummary(
+    createOrderSummary(order, {
+      marketReference: currentMarketReference,
+      quotePreview,
+      staleAfterMs: 15_000,
+      highSlippageBps: 50,
+    }),
+  );
+}
+```
+
+The backend should bind the returned `previewId` to the exact intent and return
+any estimated fill price, estimated notional, fees, slippage, and expiry.
+
+`OrderQuotePreview` is deliberately short-lived economic information. It is not
+an order and must not silently replace fields in the intent.
+
+## 4. Build and display the review summary
+
+`createOrderSummary` combines the unchanged intent with optional display data:
+
+- a sanitized `MarketReference`
+- a backend `OrderQuotePreview`
+- fee estimates
+- derived warnings
+
+Warnings can identify a non-guaranteed market price, stale or delayed market
+data, extended-hours trading, high slippage, estimated notional, or an expired
+preview.
+
+```tsx
+<OrderReview
+  summary={summary}
+  quoteCurrency="USDT"
+  marketReferenceDisplay="full"
+  onCancel={() => setSummary(null)}
+  onRefreshPreview={refreshPreview}
+  onConfirm={confirmOrder}
+/>
+```
+
+An expired preview disables confirmation. When `onRefreshPreview` is provided,
+the review also presents a refresh action; the host remains responsible for
+fetching the replacement preview.
+
+## 5. Confirm through the trading backend
+
+`OrderReview` returns the original `OrderIntent` through `onConfirm`. Submit it
+through an authenticated backend endpoint together with the backend-defined
+preview reference or confirmation token.
+
+```ts
+async function confirmOrder(order: OrderIntent) {
+  await tradingApi.submitOrder({
+    order,
+    previewId: summary.quotePreview?.previewId,
+  });
+}
+```
+
+The backend must revalidate the order against current account state, permissions,
+market state, product rules, and preview validity before routing it.
+
+## Execution errors
+
+Provider-specific failures should be mapped to Mosaic's broker-neutral
+`OrderExecutionError` codes before reaching `OrderReview`. Examples include
+`insufficient_buying_power`, `market_closed`, `price_changed`, `quote_expired`,
+and `rate_limited`.
+
+This gives the UI stable behavior and localizable messages without exposing a
+broker's raw response shape.
+
+<Callout type="info" title="Intent remains the source of truth">
+  Estimates, market references, fees, and warnings supplement the intent for
+  review. They never mutate the order that the user formed.
+</Callout>

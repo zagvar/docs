@@ -1,0 +1,57 @@
+---
+title: Zagvar
+description: Foundations for building adaptable digital-asset trading platforms.
+---
+
+Zagvar provides independent frontend and backend foundations for developers
+building trading applications across equities, tokenized assets, crypto, FX,
+funds, indices, and other markets.
+
+<Cards>
+  <Card
+    title="Mosaic"
+    description="Accessible, composable React building blocks for trading interfaces."
+    href="/docs/mosaic"
+  />
+  <Card
+    title="Relay"
+    description="Provider-neutral market-data ingestion, caching, pub/sub, and realtime delivery."
+    href="/docs/relay"
+  />
+  <Card
+    title="Build with both"
+    description="Connect Relay market data to Mosaic interfaces through your application boundary."
+    href="/docs/guides"
+  />
+</Cards>
+
+## Two independent foundations
+
+Mosaic and Relay are designed to work well in the same trading platform, but
+neither package depends on the other.
+
+- **Mosaic** owns reusable trading UI behavior, accessible interaction, frontend
+  validation, and presentation-ready domain state.
+- **Relay** owns normalized market-data contracts, provider integration seams,
+  hot caching, pub/sub, hydration, and realtime transport.
+- **Your application** owns the mapping between them, along with authentication,
+  accounts, balances, order execution, permissions, compliance, and product
+  policy.
+
+This separation lets developers adopt either project independently and prevents
+a provider, broker, framework, or product model from becoming a hidden system
+requirement.
+
+## Start here
+
+Read [Foundations](/docs/foundations) for the shared design principles and system
+boundaries. Then choose the path that matches the layer you are building:
+
+- [Get started with Mosaic](/docs/mosaic/installation)
+- [Get started with Relay](/docs/relay/installation)
+- [Understand how they work together](/docs/guides)
+
+<Callout type="warn" title="Pre-release software">
+  Mosaic and Relay are under active development. Their public APIs may change
+  before the first stable release.
+</Callout>

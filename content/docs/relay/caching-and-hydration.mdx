@@ -1,0 +1,130 @@
+---
+title: Caching and hydration
+description: Store hot market state and use it to initialize clients before live delivery.
+---
+
+Relay separates live event delivery from the latest readable state.
+
+- The **cache** retains the latest useful view of market data.
+- The **event bus** distributes new normalized events.
+- The **hydrator** reads the cache to initialize a client.
+
+Together they avoid making a newly connected client wait for every market-data
+type to update naturally.
+
+## Cache contract
+
+`MarketDataCache` supports:
+
+- latest quote by symbol and optional venue
+- latest trade by symbol and optional venue
+- latest complete order-book snapshot by symbol and optional venue
+- market summaries by normalized symbol
+- bar series by symbol, optional venue, and timeframe
+- latest market clock
+
+```ts
+const quote = await cache.getLatestQuote({
+  symbol: "BTC/USD",
+  venue: "COINBASE",
+});
+
+const bars = await cache.getBars({
+  symbol: "BTC/USD",
+  venue: "COINBASE",
+  timeframe: "1m",
+});
+```
+
+Omitting venue addresses a distinct default or consolidated stream. It is not a
+wildcard over venue-specific entries.
+
+## Memory and Redis implementations
+
+`MemoryMarketDataCache` is suitable for tests, examples, and single-process
+demos. Its state disappears with the process and cannot coordinate multiple
+instances.
+
+`RedisMarketDataCache` provides shared hot state. Quotes and trades use hashes,
+bars use timestamp-scored sorted sets, and order-book snapshots use distinct
+symbol-and-venue keys. Configurable retention can trim and expire bar series;
+market summaries and the market clock can also receive TTLs.
+
+Redis is not intended to replace durable historical storage. Fetch longer
+history from a provider, database, object store, or dedicated time-series system.
+
+## Hydrate a client
+
+```ts
+import { MarketDataHydrator } from "@zagvar/relay-core";
+
+const hydrator = new MarketDataHydrator(cache);
+
+const data = await hydrator.hydrate({
+  quotes: [{ symbol: "BTC/USD", venue: "COINBASE" }],
+  trades: [{ symbol: "BTC/USD", venue: "COINBASE" }],
+  bars: [
+    {
+      symbol: "BTC/USD",
+      venue: "COINBASE",
+      timeframe: "1m",
+    },
+  ],
+  orderBooks: [{ symbol: "BTC/USD", venue: "COINBASE" }],
+  includeMarketClock: true,
+});
+```
+
+The result groups available values into `latestQuotes`, `latestTrades`, `bars`,
+`orderBookSnapshots`, and `marketClock`. Missing individual entries are omitted.
+An explicitly requested collection may therefore be present as an empty array.
+
+Hydration is cache-only. It does not contact a provider or manufacture fallback
+data when a value is missing.
+
+## Hydration over WebSocket
+
+A Relay WebSocket client sends the same request inside a `hydrate` message:
+
+```json
+{
+  "type": "hydrate",
+  "request": {
+    "quotes": [{ "symbol": "BTC/USD", "venue": "COINBASE" }],
+    "orderBooks": [{ "symbol": "BTC/USD", "venue": "COINBASE" }]
+  }
+}
+```
+
+The session returns:
+
+```json
+{
+  "type": "hydration",
+  "data": {
+    "latestQuotes": [],
+    "orderBookSnapshots": []
+  }
+}
+```
+
+Actual arrays contain the cached normalized events. The empty example emphasizes
+that cache misses are valid hydration results rather than transport errors.
+
+## Avoiding a hydration gap
+
+Cache hydration and live subscription are separate operations. A production
+client must account for events that could occur between them.
+
+A common policy is:
+
+1. open the WebSocket
+2. subscribe to the required live streams
+3. request cached hydration
+4. reconcile hydration and live events by timestamp or sequence
+
+For order books, use explicit snapshot and sequence rules rather than timestamp
+guessing. See [Order books](/docs/relay/order-books).
+
+Relay supplies the primitives but leaves replay buffers, acknowledgements, and
+application-specific connection policy to the host service.

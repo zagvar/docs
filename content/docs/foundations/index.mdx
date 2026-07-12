@@ -1,0 +1,93 @@
+---
+title: Foundations
+description: The design principles and responsibility boundaries shared across Zagvar projects.
+---
+
+Trading products vary widely. An exchange, retail broker, tokenized-equity app,
+institutional terminal, and self-custodial crypto interface cannot share one
+complete product model without accumulating restrictive assumptions.
+
+Zagvar focuses instead on two broadly reusable layers:
+
+```txt
+market-data providers
+        ↓
+      Relay
+        ↓
+application mapping and state
+        ↓
+      Mosaic
+        ↓
+trading interface
+```
+
+The diagram shows a common composition, not a required deployment topology.
+Mosaic can consume data from any backend, and Relay can serve any client.
+
+## Provider-neutral boundaries
+
+External providers use different symbols, field names, units, timestamps, and
+transport protocols. Provider-specific details should be translated at the edge
+of the application rather than propagated throughout the product.
+
+Relay normalizes upstream market data into readable contracts. Mosaic accepts
+presentation-ready values and order rules without knowing which provider,
+exchange, or backend produced them.
+
+## Shared market identity
+
+Mosaic and Relay use compatible semantics for the fields that naturally cross
+the frontend/backend boundary:
+
+| Field | Meaning |
+| --- | --- |
+| `symbol` | Application- or provider-normalized instrument identifier |
+| `assetClass` | Economic category such as equity, crypto, FX, or fund |
+| `venue` | Exchange, venue, or source market when relevant |
+| `baseAsset` | Base side of a pair-based instrument |
+| `quoteAsset` | Asset in which the pair is priced |
+
+Prices use full names such as `price`, `bidPrice`, and `askPrice`. Quantities are
+expressed with `quantity` rather than provider-shaped abbreviations. Public
+timestamps are ISO 8601 strings.
+
+Compatible meaning does not require shared package types. The host application
+retains an explicit mapping boundary and can enrich, filter, aggregate, or
+authorize data before presenting it.
+
+## Venue-aware data
+
+The same symbol can have different prices and liquidity on different venues.
+Relay therefore treats optional `venue` as part of market-data identity for
+quotes, trades, bars, and order books.
+
+Omitting venue represents a deliberate default or consolidated stream. It does
+not mean “every venue.” Applications decide how consolidated data is created and
+how it should be labelled in the interface.
+
+## Backend authority
+
+Mosaic validation improves responsiveness and helps users form valid order
+intents, but frontend validation is never a security or execution boundary.
+
+Before placing an order, the backend remains responsible for validating current
+market state, account state, balances, buying power, permissions, fees, product
+rules, and applicable compliance requirements.
+
+## Deliberate product boundaries
+
+Zagvar does not attempt to provide a complete trading platform. The host product
+continues to own:
+
+- authentication and identity
+- accounts, portfolios, and balances
+- order routing, execution, and lifecycle persistence
+- risk, permissions, and compliance
+- entitlements and market-data licensing
+- deposits, withdrawals, custody, and settlement
+- product-specific workflows and visual identity
+
+These responsibilities depend heavily on business model, jurisdiction,
+providers, and operational requirements. Keeping them outside Mosaic and Relay
+makes both foundations useful across more products without minimizing their
+importance.
