@@ -28,6 +28,10 @@ pnpm lint
 pnpm build
 ```
 
+Set `NEXT_PUBLIC_SITE_URL` to the public origin in deployment environments so
+canonical social metadata and generated Open Graph image URLs use the correct
+host. Vercel deployments fall back to `VERCEL_PROJECT_PRODUCTION_URL`.
+
 ## Content
 
 Documentation pages live in `content/docs`. Fumadocs navigation is controlled

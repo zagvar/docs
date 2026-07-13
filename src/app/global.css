@@ -1,6 +1,16 @@
 @import 'tailwindcss';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+@import '../components/mosaic/previews.css';
+
+:root {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+}
 
 html {
   scrollbar-gutter: stable;
@@ -9,4 +19,54 @@ html {
 html > body[data-scroll-locked] {
   margin-right: 0px !important;
   --removed-body-scroll-bar-size: 0px !important;
+}
+
+.zagvar-home {
+  min-height: calc(100dvh - 3.5rem);
+}
+
+.zagvar-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-fd-border) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-fd-border) 45%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 72%);
+  opacity: 0.55;
+}
+
+.zagvar-product-card {
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.zagvar-product-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-fd-primary) 36%, var(--color-fd-border));
+  box-shadow: 0 18px 48px -32px color-mix(in srgb, var(--color-fd-foreground) 45%, transparent);
+}
+
+.zagvar-card-mosaic::before,
+.zagvar-card-relay::before {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 2px;
+  content: '';
+}
+
+.zagvar-card-mosaic::before {
+  background: linear-gradient(90deg, #22c55e, transparent 65%);
+}
+
+.zagvar-card-relay::before {
+  background: linear-gradient(90deg, #38bdf8, transparent 65%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zagvar-product-card,
+  .zagvar-product-card * {
+    transition: none !important;
+  }
 }

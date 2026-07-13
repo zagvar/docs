@@ -2,3 +2,6 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - "@zagvar/mosaic-core@0.2.0"
+  - "@zagvar/mosaic-react@0.2.1"
