@@ -1,11 +1,11 @@
 ---
 title: Zagvar
-description: Foundations for building adaptable digital-asset trading platforms.
+description: Open-source decimal, market-data, and interface building blocks for trading applications.
 ---
 
-Zagvar provides independent frontend and backend foundations for developers
-building trading applications across equities, tokenized assets, crypto, FX,
-funds, indices, and other markets.
+Zagvar provides focused TypeScript packages for exact decimal values,
+market-data services, and accessible trading interfaces. Use one project on its
+own or combine them through application code you control.
 
 <Cards>
   <Card
@@ -15,43 +15,49 @@ funds, indices, and other markets.
   />
   <Card
     title="Relay"
-    description="Provider-neutral market-data ingestion, caching, pub/sub, and realtime delivery."
+    description="Provider-neutral market-data ingestion, caching, pub/sub, and real-time delivery."
     href="/docs/relay"
   />
   <Card
-    title="Build with both"
-    description="Connect Relay market data to Mosaic interfaces through your application boundary."
+    title="Decimal"
+    description="Strict canonical decimal strings and exact arithmetic shared by Mosaic and Relay."
+    href="/docs/decimal"
+  />
+  <Card
+    title="Integration guides"
+    description="Connect Zagvar packages without giving up application control."
     href="/docs/guides"
   />
 </Cards>
 
-## Two independent foundations
+## Three focused projects
 
-Mosaic and Relay are designed to work well in the same trading platform, but
-neither package depends on the other.
+Each project has a narrow responsibility:
 
-- **Mosaic** owns reusable trading UI behavior, accessible interaction, frontend
-  validation, and presentation-ready domain state.
-- **Relay** owns normalized market-data contracts, provider integration seams,
-  hot caching, pub/sub, hydration, and realtime transport.
-- **Your application** owns the mapping between them, along with authentication,
-  accounts, balances, order execution, permissions, compliance, and product
+- **Decimal** validates and calculates exact base-10 values without passing
+  financial data through JavaScript floating-point numbers.
+- **Mosaic** provides reusable trading UI behavior, accessible interaction,
+  frontend validation, and presentation-ready state.
+- **Relay** normalizes provider market data and moves it through caching,
+  pub/sub, hydration, and real-time delivery.
+- **Your application** connects these pieces and remains responsible for
+  authentication, accounts, execution, permissions, compliance, and product
   policy.
 
-This separation lets developers adopt either project independently and prevents
-a provider, broker, framework, or product model from becoming a hidden system
-requirement.
+Mosaic and Relay both use `@zagvar/decimal` for economic values. Mosaic does not
+depend on Relay, and Relay does not depend on Mosaic.
 
 ## Start here
 
 Read [Foundations](/docs/foundations) for the shared design principles and system
 boundaries. Then choose the path that matches the layer you are building:
 
+- [Use exact decimal values](/docs/decimal)
 - [Get started with Mosaic](/docs/mosaic/installation)
 - [Get started with Relay](/docs/relay/installation)
-- [Understand how they work together](/docs/guides)
+- [Read the integration guides](/docs/guides)
 
-<Callout type="warn" title="Pre-release software">
-  Mosaic and Relay are under active development. Their public APIs may change
-  before the first stable release.
+<Callout type="warn" title="Active development">
+  Decimal, Mosaic, and Relay currently use 0.x versions. Their public APIs may
+  change before the first stable release.
 </Callout>

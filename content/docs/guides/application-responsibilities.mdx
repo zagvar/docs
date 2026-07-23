@@ -13,7 +13,7 @@ by product design, providers, jurisdiction, and operating model.
 | --- | --- |
 | Relay | Normalize, cache, publish, hydrate, and transport market data |
 | Mosaic | Form order intent and present accessible trading UI state |
-| Host application | Identity, authorization, product policy, state orchestration, and execution |
+| Application services | Identity, authorization, product policy, state orchestration, and execution |
 | Provider adapters | Translate external protocols and payloads |
 | Trading backend | Authoritative validation, preview, risk, routing, and order lifecycle |
 
@@ -28,7 +28,7 @@ Client-side visibility and disabled controls are not authorization mechanisms.
 ## Market-data entitlements
 
 The application must enforce provider licensing and user entitlements. It also
-owns public labelling for realtime, delayed, indicative, consolidated, and
+owns public labelling for real-time, delayed, indicative, consolidated, and
 synthetic data.
 
 Do not forward provider credentials, private endpoints, internal service names,
@@ -70,7 +70,7 @@ authority.
 
 ## Compliance and policy
 
-Depending on the product, the host may need suitability, appropriateness,
+Depending on the product, the application may need suitability, appropriateness,
 disclosures, jurisdiction restrictions, best-execution policy, surveillance,
 record keeping, tax handling, and market-data agreements.
 
@@ -79,11 +79,17 @@ market-data library.
 
 ## Precision and accounting
 
-Mosaic and Relay currently use JavaScript numbers in display-oriented market
-contracts. Execution, balances, ledger entries, fees, and accounting should use
-the backend's decimal-safe representation and explicit currency precision.
+Mosaic and Relay use canonical decimal strings for economic values. Keep those
+values exact in API payloads and application state. Use `@zagvar/decimal` for
+shared validation and arithmetic when JavaScript services need to calculate
+with them.
 
-Convert to display numbers only at a controlled boundary.
+Canonical strings solve transport and floating-point precision problems, but
+they are not a complete accounting model. Execution and ledger systems still
+need explicit currencies, currency precision, rounding policy, settlement
+rules, and auditable entries. Format decimal strings only when presenting them;
+do not turn a formatted or floating-point value back into an authoritative
+amount.
 
 ## Reliability and observability
 
@@ -104,7 +110,7 @@ credentialed smoke tests.
 
 ## Product presentation
 
-Mosaic provides accessible behavior and styling slots, but the host controls
+Mosaic provides accessible behavior and styling slots, but the application controls
 brand, responsive layout, disclosure placement, error tone, terminology, and
 support paths.
 

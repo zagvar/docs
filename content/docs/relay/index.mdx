@@ -1,6 +1,6 @@
 ---
 title: Relay
-description: Provider-neutral market-data ingestion, normalization, caching, pub/sub, and realtime delivery.
+description: Provider-neutral market-data ingestion, normalization, caching, pub/sub, and real-time delivery.
 ---
 
 Relay is the backend market-data foundation of the Zagvar ecosystem. It provides
@@ -60,8 +60,20 @@ Relay currently models:
 - incremental order-book updates
 
 Quotes, trades, bars, and order books are venue-aware. Provider payloads are
-normalized into readable field names, instrument-unit quantities, and ISO 8601
-timestamps before entering the pipeline.
+normalized into readable field names, canonical decimal strings,
+instrument-unit quantities, and ISO 8601 timestamps before entering the
+pipeline.
+
+## Exact market values
+
+Relay carries prices, quantities, and other economic values as canonical decimal
+strings. Provider adapters must preserve source precision when parsing and
+normalizing data. This prevents JavaScript floating-point rounding from entering
+the cache, event bus, or WebSocket protocol.
+
+Relay uses the contracts from [`@zagvar/decimal`](/docs/decimal). Counts,
+sequence numbers, limits, and durations remain integers because they are control
+values rather than decimal market amounts.
 
 ## Scope
 

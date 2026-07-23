@@ -3,9 +3,10 @@ title: Installation
 description: Add Mosaic packages to a React trading application.
 ---
 
-<Callout type="warn" title="Source-first pre-release">
-  Mosaic packages are not published to npm yet. Use the repository and demo to
-  explore the current API until the first package release.
+<Callout type="info" title="Published packages">
+  Mosaic packages are published under the `@zagvar` scope. The examples in
+  these docs are checked against the published package contracts used by this
+  site. Pin versions deliberately in production applications.
 </Callout>
 
 ## Requirements
@@ -29,23 +30,26 @@ WebSocket market data, selectable quote and book prices, and order review.
 ## Choose a package
 
 Use `@zagvar/mosaic-core` when you need framework-independent trading contracts,
-schemas, validation, summaries, decimal helpers, or order-book reconciliation.
+schemas, validation, summaries, order state reducers, or order-book
+reconciliation.
 
 Use `@zagvar/mosaic-react` when you need accessible components and React state
-hooks. Install `@zagvar/mosaic-core` alongside it when your application imports
-the framework-independent contracts and utilities directly.
+hooks. It already depends on Mosaic Core.
 
-Once the packages are published, installation will use the standard workspace
-package command:
+Install only the packages your application imports directly:
 
 ```bash
 pnpm add @zagvar/mosaic-react
+pnpm add @zagvar/mosaic-core
+pnpm add @zagvar/decimal
 ```
 
-That command is shown for the upcoming package release and is not expected to
-resolve from npm yet.
+The last two commands are optional. Add Mosaic Core when application code uses
+its contracts or framework-free utilities. Add Decimal when application code
+validates, normalizes, compares, or calculates exact decimal values. Import
+Decimal APIs from `@zagvar/decimal`, not through Mosaic.
 
-## Host application responsibilities
+## Application responsibilities
 
 Before composing components, identify where your application will provide:
 

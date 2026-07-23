@@ -1,0 +1,82 @@
+---
+title: Decimal
+description: Strict decimal-string contracts and exact arithmetic for financial TypeScript applications.
+---
+
+`@zagvar/decimal` keeps financial values out of JavaScript floating-point
+arithmetic. It provides runtime schemas, canonicalization helpers, comparisons,
+and exact calculations for base-10 strings.
+
+```bash
+pnpm add @zagvar/decimal
+```
+
+```ts
+import {
+  multiplyDecimals,
+  positiveDecimalStringSchema,
+} from "@zagvar/decimal";
+
+const quantity = positiveDecimalStringSchema.parse("0.025");
+const price = positiveDecimalStringSchema.parse("67250");
+
+multiplyDecimals(quantity, price);
+// "1681.25"
+```
+
+## Why strings?
+
+JavaScript represents ordinary numbers with binary floating-point arithmetic.
+That is useful for general programming, but some decimal values cannot be
+represented exactly:
+
+```ts
+0.1 + 0.2;
+// 0.30000000000000004
+```
+
+A decimal string preserves the digits received from an API, entered by a user,
+stored in a cache, or sent through JSON. Decimal performs calculations with
+`big.js` and returns another canonical string.
+
+## What the package provides
+
+<Cards>
+  <Card
+    title="Canonical values"
+    description="Understand the exact string formats accepted at runtime."
+    href="/docs/decimal/canonical-values"
+  />
+  <Card
+    title="Validate and normalize"
+    description="Handle trusted contracts, editable input, and provider number tokens correctly."
+    href="/docs/decimal/validation-and-normalization"
+  />
+  <Card
+    title="Exact arithmetic"
+    description="Compare, add, subtract, multiply, divide, and inspect decimal values."
+    href="/docs/decimal/arithmetic"
+  />
+  <Card
+    title="Rounding and truncation"
+    description="Choose an explicit display or business rule without hidden floating-point behavior."
+    href="/docs/decimal/rounding-and-truncation"
+  />
+</Cards>
+
+## What it does not provide
+
+Decimal is not a currency, money, ledger, or accounting model. It does not know:
+
+- which currency a value uses
+- how many digits a venue or asset permits
+- whether an amount is a price, quantity, balance, or fee
+- which rounding policy a business process requires
+
+Applications and domain packages such as Mosaic and Relay add those meanings.
+Use Decimal for the exact representation and calculations underneath them.
+
+<Callout type="info">
+  Import Decimal types, schemas, and helpers directly from
+  `@zagvar/decimal`. It is the package that owns this contract.
+</Callout>

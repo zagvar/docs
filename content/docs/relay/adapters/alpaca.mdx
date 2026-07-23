@@ -50,13 +50,19 @@ Use `parseAlpacaStockMarketEvents` to convert a raw WebSocket batch without
 opening a connection. Lower-level parser, type-guard, and mapper exports are
 available for custom integrations and focused tests.
 
+The batch parser reads provider JSON losslessly. Numeric tokens that represent
+prices, quantities, or volume are canonicalized before Relay schemas accept the
+event, rather than first passing through a JavaScript `number`.
+
 ## Normalization details
 
 - Alpaca field names become full Relay names.
 - trade exchange code becomes the event `venue`.
 - quote bid and ask exchange codes become `bidVenue` and `askVenue`.
 - stock quote sizes are converted from round lots to share quantities using a
-  lot size of 100.
+  lot size of `"100"` with exact decimal multiplication.
+- prices, quantities, and volumes leave the adapter as canonical decimal
+  strings.
 - trade and quote timestamps remain provider ISO strings.
 - minute and updated bars use timeframe `1Min`; daily bars use `1Day`.
 

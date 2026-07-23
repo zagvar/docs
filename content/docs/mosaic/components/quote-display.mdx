@@ -18,12 +18,14 @@ and the calculated spread.
 />
 ```
 
-The `quote` must satisfy Mosaic's `MarketQuote` contract. The component formats
-numbers using the current React Aria locale.
+The `quote` must satisfy Mosaic's `MarketQuote` contract. Its price and quantity
+values are canonical decimal strings; the component formats them using the
+current React Aria locale.
 
 When `onSelectPrice` is provided, bid, ask, and last prices become accessible
-buttons. The callback identifies the selected value and its `bid`, `ask`, or
-`last` kind. Without the callback, values remain non-interactive display rows.
+buttons. The callback returns the selected decimal string and its `bid`, `ask`,
+or `last` kind. Without the callback, values remain non-interactive display
+rows.
 
 `isDisabled` disables selection without removing market information. Use the
 message object to localize labels and accessible selection text.

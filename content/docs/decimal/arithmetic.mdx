@@ -1,0 +1,78 @@
+---
+title: Exact arithmetic
+description: Compare and calculate canonical decimal strings without JavaScript floating-point conversion.
+---
+
+Decimal helpers validate their inputs and return canonical strings.
+
+## Compare values
+
+```ts
+import { compareDecimals } from "@zagvar/decimal";
+
+compareDecimals("0.1", "0.10");
+```
+
+The example above throws because `"0.10"` is not canonical. With valid inputs,
+the function returns `-1`, `0`, or `1`:
+
+```ts
+compareDecimals("0.1", "0.2");
+// -1
+```
+
+## Add, subtract, and multiply
+
+```ts
+import {
+  addDecimals,
+  multiplyDecimals,
+  subtractDecimals,
+} from "@zagvar/decimal";
+
+addDecimals("0.1", "0.2");
+// "0.3"
+
+subtractDecimals("10", "12.5");
+// "-2.5"
+
+multiplyDecimals("0.025", "67250");
+// "1681.25"
+```
+
+These helpers accept signed canonical values. Their result may therefore be
+negative even when both inputs were unsigned.
+
+## Divide with an explicit scale
+
+Division requires a non-negative number of decimal places:
+
+```ts
+import { divideDecimals } from "@zagvar/decimal";
+
+divideDecimals("10", "3", 4);
+// "3.3333"
+```
+
+Division truncates beyond the requested decimal places. It throws for a zero
+divisor or an invalid decimal-place argument.
+
+## Check increments and scale
+
+Use `isMultipleOfDecimalIncrement` for tick sizes, lot sizes, and other exact
+increments:
+
+```ts
+isMultipleOfDecimalIncrement("10.25", "0.05");
+// true
+```
+
+`decimalScale` returns the number of fractional digits in a canonical value:
+
+```ts
+decimalScale("0.000001");
+// 6
+```
+
+Keep domain policy outside these helpers. For example, Mosaic decides whether a
+quantity must match a lot-size increment; Decimal performs the exact check.

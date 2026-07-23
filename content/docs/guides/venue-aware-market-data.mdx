@@ -42,7 +42,7 @@ await cache.getLatestQuote({
 Omitting `venue` addresses one deliberate default or consolidated stream. It is
 not a wildcard and does not match all venue-specific events.
 
-The host application must define what that default means. Common policies
+The application must define what that default means. Common policies
 include:
 
 - provider-defined consolidated feed
@@ -64,11 +64,11 @@ const quote = {
   type: "quote",
   symbol: "AAPL",
   assetClass: "equity",
-  bidPrice: 212.14,
-  bidQuantity: 300,
+  bidPrice: "212.14",
+  bidQuantity: "300",
   bidVenue: "X",
-  askPrice: 212.16,
-  askQuantity: 200,
+  askPrice: "212.16",
+  askQuantity: "200",
   askVenue: "Y",
   timestamp: "2026-07-13T02:00:00.000Z",
 };
@@ -124,7 +124,7 @@ topology, private endpoints, or routing details.
 The application remains responsible for:
 
 - market-data licensing and entitlements
-- delayed versus realtime labelling
+- delayed versus real-time labelling
 - identifying indicative or synthetic prices
 - choosing a consolidated-feed policy
 - determining which venue can be used for trading

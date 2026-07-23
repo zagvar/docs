@@ -15,8 +15,8 @@ import { TradeTicket } from "@zagvar/mosaic-react";
   symbol="BTC/USDT"
   assetClass="crypto"
   assetRules={assetRules}
-  cashAvailable={10_000}
-  assetQuantityAvailable={0.5}
+  cashAvailable="10000"
+  assetQuantityAvailable="0.5"
   quoteCurrency="USDT"
   amountPresets={[25, 50, 75, 100]}
   onSubmit={reviewOrder}
@@ -29,11 +29,20 @@ import { TradeTicket } from "@zagvar/mosaic-react";
 | --- | --- |
 | `symbol` | Instrument identifier used in the resulting intent |
 | `assetClass` | Instrument asset class |
-| `assetRules` | Supported order behavior and numeric constraints |
+| `assetRules` | Supported order behavior and decimal constraints |
 | `cashAvailable` | Displayed quote-currency availability and buy validation input |
 | `assetQuantityAvailable` | Displayed asset availability and sell validation input |
 
 `quoteCurrency` defaults to `USD`.
+
+## Decimal inputs
+
+`cashAvailable`, `assetQuantityAvailable`, asset-rule amounts, and the
+quantity, notional, and limit-price fields in `value` or `defaultValue` are
+canonical decimal strings. For example, use `"0.025"` and `"67250"`, not
+numeric literals. While a user is editing, the ticket keeps an incomplete value
+such as `1.` local to the field; it emits a canonical string only when the value
+is complete.
 
 ## Submission
 

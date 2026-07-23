@@ -35,9 +35,11 @@ import { I18nProvider } from "react-aria-components";
 </I18nProvider>;
 ```
 
-The locale affects number, currency-adjacent value, date, and time formatting.
+The locale affects decimal, currency-adjacent value, date, and time formatting.
 The `quoteCurrency` prop supplies the displayed currency code; it is separate
-from locale.
+from locale. Pass canonical decimal strings to Mosaic and let the component
+apply grouping, separators, and local digits; do not pre-localize values before
+passing them in.
 
 ## Validation and execution errors
 
