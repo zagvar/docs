@@ -8,12 +8,18 @@ import {
   TradeTicketPreview,
   TradingChartPreview,
 } from '@/components/mosaic/previews';
+import {
+  OrderDetailsPreview,
+  OrdersPanelPreview,
+} from '@/components/mosaic/order-previews';
 
 export function getMDXComponents(components?: MDXComponents) {
   return {
     ...defaultMdxComponents,
     OrderBookPreview,
+    OrderDetailsPreview,
     OrderReviewPreview,
+    OrdersPanelPreview,
     QuoteDisplayPreview,
     RecentTradesPreview,
     TradeTicketPreview,

@@ -30,15 +30,15 @@ payload.
 the user switches side, order type, quantity or notional entry, time in force,
 limit price, and extended-hours preference.
 
-The host supplies the current instrument rules and account availability:
+The application supplies the current instrument rules and account availability:
 
 ```tsx
 <TradeTicket
   symbol="BTC/USDT"
   assetClass="crypto"
   assetRules={assetRules}
-  cashAvailable={10_000}
-  assetQuantityAvailable={0.5}
+  cashAvailable="10000"
+  assetQuantityAvailable="0.5"
   quoteCurrency="USDT"
   onSubmit={reviewOrder}
 />
@@ -63,7 +63,7 @@ validates the draft against:
 Invalid drafts return stable issue codes that the UI can localize. Valid drafts
 produce an `OrderIntent`.
 
-Intent creation never rounds, snaps, or repairs invalid numeric values. It only
+Intent creation never rounds, snaps, or repairs invalid decimal values. It only
 removes fields irrelevant to the selected order type—for example, a stale limit
 price from a market order.
 
@@ -81,7 +81,7 @@ async function reviewOrder(order: OrderIntent) {
       marketReference: currentMarketReference,
       quotePreview,
       staleAfterMs: 15_000,
-      highSlippageBps: 50,
+      highSlippageBps: "50",
     }),
   );
 }
@@ -118,7 +118,7 @@ preview.
 ```
 
 An expired preview disables confirmation. When `onRefreshPreview` is provided,
-the review also presents a refresh action; the host remains responsible for
+the review also presents a refresh action; the application remains responsible for
 fetching the replacement preview.
 
 ## 5. Confirm through the trading backend
@@ -153,3 +153,7 @@ broker's raw response shape.
   Estimates, market references, fees, and warnings supplement the intent for
   review. They never mutate the order that the user formed.
 </Callout>
+
+After the backend accepts an order, continue with
+[Order management](/docs/mosaic/order-management) for open orders, history,
+details, and live lifecycle updates.

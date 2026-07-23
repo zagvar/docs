@@ -6,6 +6,8 @@
     "quote-display",
     "order-book",
     "recent-trades",
-    "trading-chart"
+    "trading-chart",
+    "orders-panel",
+    "order-details"
   ]
 }

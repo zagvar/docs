@@ -35,10 +35,14 @@ trading behavior from application branding, data fetching, and backend policy.
 - time-in-force selection
 - controlled and uncontrolled trade-draft state
 - order review, warnings, fee estimates, and confirmation states
+- mixed-instrument open orders and order history
+- server-driven filters, sorting, and cursor pagination
+- detailed fills, fees, status reasons, and lifecycle events
+- cancel and replace actions controlled by backend capabilities
 - quote, recent-trade, chart, and order-book presentation
 - snapshot and incremental order-book reconciliation
 - localizable messages and locale-aware formatting
-- explicit styling slots for integration with a host design system
+- explicit styling slots for integration with an application design system
 
 ## Basic composition
 
@@ -49,8 +53,8 @@ import { TradeTicket } from "@zagvar/mosaic-react";
   symbol="BTC/USDT"
   assetClass="crypto"
   assetRules={assetRules}
-  cashAvailable={10_000}
-  assetQuantityAvailable={0.5}
+  cashAvailable="10000"
+  assetQuantityAvailable="0.5"
   quoteCurrency="USDT"
   onSubmit={(orderIntent) => setOrderForReview(orderIntent)}
 />;
@@ -60,10 +64,15 @@ import { TradeTicket } from "@zagvar/mosaic-react";
 server-authoritative preview, render it with `OrderReview`, and submit the
 confirmed order through its own backend.
 
+For submitted orders, [`OrdersPanel`](/docs/mosaic/components/orders-panel)
+renders account-wide open orders and history while
+[`OrderDetails`](/docs/mosaic/components/order-details) presents fills, fees,
+events, and available actions.
+
 ## Behavior, not branding
 
 Mosaic provides semantic structure, accessible interaction, validation, and
-state behavior. The host application supplies visual design through component
+state behavior. The application supplies visual design through component
 class-name slots.
 
 This allows Mosaic to work with plain CSS, CSS Modules, Tailwind CSS,
@@ -77,7 +86,11 @@ behavior, labeling, validation state, and assistive-technology support.
 Applications remain responsible for accessible styling and color contrast.
 
 Components accept message objects rather than requiring a translation framework.
-React Aria locale context supplies locale-aware number and date formatting.
+React Aria locale context supplies locale-aware decimal and date formatting.
+
+Mosaic keeps prices, quantities, balances, notionals, fees, and market-data
+values as canonical decimal strings. See [Core concepts](/docs/mosaic/core-concepts#canonical-decimal-values)
+before adapting provider data or building API payloads.
 
 <Callout type="info">
   Mosaic is UI infrastructure. It is not a broker, exchange, execution system,
