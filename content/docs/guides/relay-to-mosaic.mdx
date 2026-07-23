@@ -4,7 +4,8 @@ description: Map normalized backend market data into display-safe frontend state
 ---
 
 Relay and Mosaic share market-data meaning, but the application owns the
-transport and mapping between them.
+transport and mapping between them. Both packages use canonical decimal strings,
+so market values stay exact across this boundary.
 
 ```txt
 Relay WebSocket message
@@ -69,10 +70,14 @@ function toMosaicQuote(quote: RelayMarketQuote) {
 }
 ```
 
-The example converts venue into public attribution. A real product may map a
-venue code to a human-readable label, omit it, or identify a consolidated feed.
-Do not expose credentials, endpoints, internal service names, or account data in
-display contracts.
+The example validates data again at the browser boundary and converts venue into
+public attribution. Relay adapters are responsible for lossless provider parsing
+before events enter Relay; application code should not convert these fields to
+JavaScript numbers and back.
+
+A real product may map a venue code to a human-readable label, omit it, or
+identify a consolidated feed. Do not expose credentials, endpoints, internal
+service names, or account data in display contracts.
 
 Render the mapped state:
 
@@ -156,13 +161,13 @@ fees, preview validity, and market state before routing the confirmed order.
 
 ## Production considerations
 
-The host application still needs policies for:
+The application still needs policies for:
 
 - reconnect and resubscription
 - hydration/live-event race handling
 - message schema versioning
 - market-data entitlements
-- delayed, indicative, and realtime labelling
+- delayed, indicative, and real-time labelling
 - venue code display and consolidated feeds
 - stale data and disconnected UI states
 - order-book resynchronization

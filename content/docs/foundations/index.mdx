@@ -3,26 +3,39 @@ title: Foundations
 description: The design principles and responsibility boundaries shared across Zagvar projects.
 ---
 
-Trading products vary widely. An exchange, retail broker, tokenized-equity app,
-institutional terminal, and self-custodial crypto interface cannot share one
-complete product model without accumulating restrictive assumptions.
+Trading products vary widely. A retail broker, exchange, institutional terminal,
+and self-custodial crypto interface should not be forced into one complete
+product model.
 
-Zagvar focuses instead on two broadly reusable layers:
+Zagvar provides smaller pieces that can be adopted independently:
 
 ```txt
 market-data providers
         ↓
       Relay
         ↓
-application mapping and state
+application state and policy
         ↓
       Mosaic
         ↓
 trading interface
+
+@zagvar/decimal preserves exact economic values across these layers.
 ```
 
 The diagram shows a common composition, not a required deployment topology.
-Mosaic can consume data from any backend, and Relay can serve any client.
+Mosaic can consume data from any backend, Relay can serve any client, and
+Decimal can be used without either project.
+
+## Exact decimal values
+
+Prices, quantities, notionals, balances, fees, and volumes must survive JSON,
+caching, state updates, and calculations without silent floating-point changes.
+Decimal defines the canonical string format and exact arithmetic used by Mosaic
+and Relay.
+
+Keep those values as strings through business and transport boundaries. Format
+them for people only at the presentation edge.
 
 ## Provider-neutral boundaries
 
@@ -31,8 +44,8 @@ transport protocols. Provider-specific details should be translated at the edge
 of the application rather than propagated throughout the product.
 
 Relay normalizes upstream market data into readable contracts. Mosaic accepts
-presentation-ready values and order rules without knowing which provider,
-exchange, or backend produced them.
+presentation-ready values and order rules without needing to know which
+provider, exchange, or backend produced them.
 
 ## Shared market identity
 
@@ -51,9 +64,9 @@ Prices use full names such as `price`, `bidPrice`, and `askPrice`. Quantities ar
 expressed with `quantity` rather than provider-shaped abbreviations. Public
 timestamps are ISO 8601 strings.
 
-Compatible meaning does not require shared package types. The host application
-retains an explicit mapping boundary and can enrich, filter, aggregate, or
-authorize data before presenting it.
+Compatible meaning does not remove the application mapping step. An application
+may still enrich, filter, aggregate, authorize, or relabel data before
+presenting it.
 
 ## Venue-aware data
 
@@ -76,7 +89,7 @@ rules, and applicable compliance requirements.
 
 ## Deliberate product boundaries
 
-Zagvar does not attempt to provide a complete trading platform. The host product
+Zagvar does not attempt to provide a complete trading platform. The application
 continues to own:
 
 - authentication and identity

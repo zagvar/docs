@@ -62,7 +62,21 @@ Hydration requires a configured `MarketDataHydrator`. The response is:
 ```json
 {
   "type": "hydration",
-  "data": {}
+  "data": {
+    "quotes": [
+      {
+        "type": "quote",
+        "symbol": "BTC/USD",
+        "assetClass": "crypto",
+        "venue": "COINBASE",
+        "bidPrice": "68249.75",
+        "bidQuantity": "0.8",
+        "askPrice": "68250.5",
+        "askQuantity": "1.1",
+        "timestamp": "2026-07-23T01:30:00.000Z"
+      }
+    ]
+  }
 }
 ```
 
@@ -77,7 +91,17 @@ Subscribed events are returned as:
   "type": "relay_message",
   "data": {
     "channel": "quote",
-    "data": {}
+    "data": {
+      "type": "quote",
+      "symbol": "BTC/USD",
+      "assetClass": "crypto",
+      "venue": "COINBASE",
+      "bidPrice": "68249.75",
+      "bidQuantity": "0.8",
+      "askPrice": "68250.5",
+      "askQuantity": "1.1",
+      "timestamp": "2026-07-23T01:30:01.000Z"
+    }
   }
 }
 ```

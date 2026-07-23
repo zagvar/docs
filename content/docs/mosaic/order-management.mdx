@@ -1,0 +1,150 @@
+---
+title: Order management
+description: Model open orders, history, details, actions, and live reconciliation without moving backend authority into the browser.
+---
+
+Mosaic models the frontend state needed after an order has been submitted. The
+contracts are broad enough to display orders created by another browser, a
+mobile app, an API client, a broker interface, or an automated strategy.
+
+```txt
+authorized order query
+        ↓
+backend filtering, sorting, and pagination
+        ↓
+OrdersPage → OrdersPanel
+        ↓ select an order
+OrderDetailsRecord → OrderDetails
+        ↓ cancel or replace callback
+authenticated trading API
+```
+
+## Lifecycle statuses
+
+Adapters should map provider statuses into Mosaic's provider-neutral set before
+orders enter application state.
+
+| Category | Statuses |
+| --- | --- |
+| Working | `pending`, `open`, `partially_filled`, `held`, `pending_cancel`, `pending_replace` |
+| Terminal | `filled`, `canceled`, `expired`, `rejected`, `replaced` |
+| Unknown | `unknown` |
+
+Use `getOrderStatusCategory`, `isOpenOrderStatus`, and
+`isTerminalOrderStatus` when application logic needs the same classification.
+`unknown` remains separate so an unmapped provider status is never silently
+treated as open or complete.
+
+A working status does not imply that an action is currently allowed. The backend
+supplies `capabilities.cancel` and `capabilities.replace` for each order.
+
+## List records and details
+
+`OrderListItem` is the compact row contract. It includes instrument identity,
+order instructions, lifecycle state, requested and filled amounts, relevant
+prices, timestamps, and action capabilities.
+
+`OrderDetailsRecord` adds:
+
+- individual fills and their liquidity role
+- charges or rebates, currency, and display precision
+- ordered lifecycle events
+- a current status reason
+- replacement-chain identifiers
+
+Actual fee amounts can be negative. A negative amount represents a rebate, not
+invalid unsigned money.
+
+See [`OrdersPanel`](/docs/mosaic/components/orders-panel) for list presentation
+and [`OrderDetails`](/docs/mosaic/components/order-details) for the complete
+record.
+
+## Mixed instruments and precision
+
+An orders page can contain equities, crypto assets, and other supported asset
+classes together. Preserve each row's `symbol`, `assetClass`, `quoteCurrency`,
+and optional venue or pair identity.
+
+The same fixed precision is not suitable for every row. Give `OrdersPanel` a
+`getNumberFormat` callback that returns quantity, price, and notional fraction
+digits for the current instrument. `OrderDetails` receives the matching format
+for its selected order.
+
+## Queries belong to the backend
+
+`OrdersQuery` describes the complete request emitted by the UI:
+
+- `scope`: open orders or history
+- `filters`: accounts, symbols, asset classes, venues, currencies, sides, order
+  types, time in force, statuses, and submitted-time range
+- `sort`: field and direction
+- `pagination`: opaque cursor and page size
+
+The browser prepares this semantic request. The backend authorizes account
+access and performs the real filtering, sorting, and cursor pagination. Mosaic
+does not download an account's complete order history and process it locally.
+
+Changing scope, filters, sorting, or page size clears the cursor because the
+previous cursor belongs to a different result set.
+
+## Reconcile live updates
+
+`OrderUpdate` contains a complete replacement record rather than a
+provider-specific partial patch. Use `applyOrderUpdate` to reject mismatched,
+stale, or incomplete updates deterministically.
+
+Use `applyOrderUpdateToPage` when reconciling an update with the currently
+visible `OrdersPage`. It can update or remove an existing row when the row no
+longer matches the current query.
+
+```ts
+const result = applyOrderUpdateToPage(page, query, update);
+
+if (!result.applied) {
+  refetchOrders();
+} else {
+  setPage(result.page);
+
+  if (result.requiresRefetch) {
+    scheduleOrdersRefetch();
+  }
+}
+```
+
+The reducer does not insert an unseen order into a cursor page. It cannot know
+whether that order belongs before, inside, or after the current window. A
+missing row or a result with `requiresRefetch: true` tells the application to
+refresh from the backend when exact page membership or counts matter.
+
+When available, a monotonically increasing backend `version` determines update
+order. Otherwise Mosaic falls back to `updatedAt`.
+
+## Order identity
+
+Do not assume every provider guarantees a globally unique `orderId`. Some order
+identifiers are scoped to an account, broker, or venue. Mosaic therefore checks
+`accountId` with `orderId` during reconciliation when account identity is part
+of the record.
+
+Applications serving multiple providers may need a stronger storage key, such
+as provider plus account plus order ID. Normalize that external identity before
+constructing Mosaic records; do not expose provider credentials or internal
+routing details in the UI.
+
+## Action boundary
+
+`OrdersPanel` and `OrderDetails` can request:
+
+- open details
+- cancel an order
+- begin a replace flow
+- retry a failed list request
+- select a related order in a replacement chain
+
+The callbacks do not call an API. Application code should confirm destructive
+actions where appropriate, send authenticated requests, expose pending and
+error state, then replace local data with the backend response.
+
+The backend remains responsible for authorization, current order state,
+cancelability, replaceability, risk checks, provider requests, and persisted
+lifecycle events.

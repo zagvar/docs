@@ -1,0 +1,126 @@
+---
+title: OrdersPanel
+description: Render mixed-instrument open orders and history with server-driven queries and actions.
+---
+
+`OrdersPanel` presents open orders and order history in one accessible,
+responsive table. It owns the controls for scope, filters, sorting, page size,
+and cursor navigation; application code owns data fetching.
+
+<OrdersPanelPreview />
+
+```tsx
+import type { OrdersQuery } from "@zagvar/mosaic-core";
+import { OrdersPanel } from "@zagvar/mosaic-react";
+
+function AccountOrders() {
+  const [query, setQuery] = useState<OrdersQuery>({
+    scope: "open",
+    filters: {},
+    sort: { field: "submittedAt", direction: "desc" },
+    pagination: { limit: 25 },
+  });
+
+  const orders = useOrdersApi(query);
+
+  return (
+    <OrdersPanel
+      page={orders.data}
+      query={query}
+      onQueryChange={setQuery}
+      isLoading={orders.isLoading}
+      errorMessage={orders.error?.message}
+      onRetry={orders.refetch}
+      onSelectOrder={openOrder}
+      onCancelOrder={requestCancellation}
+      onReplaceOrder={beginReplacement}
+      isCancelingOrder={(order) => cancelingId === order.orderId}
+      getNumberFormat={(order) =>
+        getInstrumentNumberFormat(order.symbol, order.assetClass)
+      }
+    />
+  );
+}
+```
+
+## Query state
+
+`onQueryChange` is required. It receives a complete, validated `OrdersQuery`
+whenever a control changes.
+
+Supply `query` to control that state from the application. Omit it and provide
+`defaultQuery` when the panel should manage its current query internally. In
+both modes, use `onQueryChange` to request the matching page from the backend.
+
+The backend should validate and authorize the query rather than copying it
+directly into a database expression.
+
+## Page and request states
+
+`page` is an `OrdersPage` containing rows, opaque previous and next cursors, an
+optional total count, and an `asOf` timestamp.
+
+Use:
+
+- `isLoading` for initial and background requests
+- `errorMessage` and `onRetry` for failed requests
+- `isDisabled` when the whole surface must be unavailable
+- `pageSizeOptions` to match backend-supported limits
+
+The component distinguishes loading, error, empty open-orders, empty history,
+and filtered-empty states.
+
+## Mixed-instrument formatting
+
+`numberFormat` supplies shared fallback precision. `getNumberFormat` can
+override it for each row:
+
+```tsx
+<OrdersPanel
+  page={page}
+  onQueryChange={loadOrders}
+  numberFormat={{
+    quantityFractionDigits: 2,
+    priceFractionDigits: 2,
+    notionalFractionDigits: 2,
+  }}
+  getNumberFormat={(order) =>
+    order.assetClass === "crypto"
+      ? { quantityFractionDigits: 8, priceFractionDigits: 2 }
+      : {}
+  }
+/>
+```
+
+This keeps a small crypto fill visible without forcing every equity quantity to
+show eight decimal places.
+
+## Selection and actions
+
+`onSelectOrder` adds a details action for each row. `onCancelOrder` and
+`onReplaceOrder` add actions only where the backend-provided capability allows
+them.
+
+The callbacks receive the complete `OrderListItem`. They do not mutate the row
+or send a request. Use `isCancelingOrder` and `isReplacingOrder` to report
+per-order pending state while application code performs the action.
+
+## Responsive layout
+
+The table groups related information into instrument, order, amount, price,
+status, time, and action columns. Each data cell exposes both a short label and
+its value, which allows application CSS to collapse or stack columns on narrow
+screens without losing meaning.
+
+Use the named `classNames` slots to implement your product's responsive layout.
+Preserve the table semantics and accessible action labels rather than replacing
+the mobile view with unlabeled values.
+
+## Messages and styling
+
+`messages` can replace individual labels and status names. Nested message maps
+are merged with defaults, so a translation can override one value without
+repeating the entire dictionary.
+
+`classNames` exposes slots for the header, scopes, filters, sort controls,
+states, table cells, status badge, actions, and pagination.

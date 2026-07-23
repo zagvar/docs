@@ -10,6 +10,10 @@ import {
   type OrderIntent,
 } from "@zagvar/mosaic-core";
 import {
+  canonicalizeUnsignedDecimalLiteral,
+  type DecimalString,
+} from "@zagvar/decimal";
+import {
   OrderBook,
   OrderReview,
   QuoteDisplay,
@@ -158,25 +162,25 @@ const cryptoRules: AssetRules = {
   allowedTifs: ["gtc", "ioc"],
   supportsNotional: true,
   notionalOrderTypes: ["market"],
-  minQuantity: 0.000001,
-  minNotional: 1,
-  minPrice: 0.01,
+  minQuantity: "0.000001",
+  minNotional: "1",
+  minPrice: "0.01",
   quantityPrecision: 6,
   pricePrecision: 2,
   notionalPrecision: 2,
-  lotSize: 0.000001,
-  tickSize: 0.01,
-  quoteIncrement: 0.01,
+  lotSize: "0.000001",
+  tickSize: "0.01",
+  quoteIncrement: "0.01",
 };
 
 const initialQuote: MarketQuote = {
   symbol: "BTC/USDT",
   assetClass: "crypto",
-  bidPrice: 67_249.8,
-  bidQuantity: 0.8421,
-  askPrice: 67_250.4,
-  askQuantity: 0.6148,
-  lastPrice: 67_250.1,
+  bidPrice: "67249.8",
+  bidQuantity: "0.8421",
+  askPrice: "67250.4",
+  askQuantity: "0.6148",
+  lastPrice: "67250.1",
   timestamp: baseTimestamp,
   mode: "real_time",
   displaySource: "Simulated feed",
@@ -186,10 +190,11 @@ const initialTrades: MarketTrade[] = Array.from({ length: 8 }, (_, index) => ({
   symbol: "BTC/USDT",
   assetClass: "crypto",
   tradeId: `fixture-${index}`,
-  price: Number(
-    (67_250.1 + (index % 2 === 0 ? index * 0.18 : -index * 0.14)).toFixed(2),
+  price: toPreviewDecimal(
+    67_250.1 + (index % 2 === 0 ? index * 0.18 : -index * 0.14),
+    2,
   ),
-  quantity: Number((0.0042 + index * 0.0017).toFixed(6)),
+  quantity: toPreviewDecimal(0.0042 + index * 0.0017, 6),
   side: index % 3 === 0 ? "sell" : "buy",
   timestamp: new Date(Date.parse(baseTimestamp) - index * 1_700).toISOString(),
   sequence: 100 - index,
@@ -211,21 +216,21 @@ const reviewOrder: OrderIntent = {
   side: "buy",
   type: "limit",
   tif: "gtc",
-  quantity: 0.025,
-  limitPrice: 67_250,
+  quantity: "0.025",
+  limitPrice: "67250",
 };
 
 const reviewSummary = createOrderSummary(reviewOrder, {
   marketReference: {
     symbol: "BTC/USDT",
     assetClass: "crypto",
-    price: 67_250.4,
+    price: "67250.4",
     kind: "ask",
     timestamp: baseTimestamp,
     mode: "real_time",
     displaySource: "Simulated venue",
   },
-  fees: [{ type: "commission", amount: 0.42, currency: "USDT" }],
+  fees: [{ type: "commission", amount: "0.42", currency: "USDT" }],
   now: Date.parse(baseTimestamp),
 });
 
@@ -239,15 +244,21 @@ export function QuoteDisplayPreview() {
     const interval = window.setInterval(() => {
       tick.current += 1;
       const movement = Math.sin(tick.current * 0.9) * 1.8;
-      const bidPrice = Number((67_249.8 + movement).toFixed(2));
+      const bidPrice = 67_249.8 + movement;
 
       setQuote({
         ...initialQuote,
-        bidPrice,
-        askPrice: Number((bidPrice + 0.6).toFixed(2)),
-        lastPrice: Number((bidPrice + 0.3).toFixed(2)),
-        bidQuantity: Number((0.7 + (tick.current % 4) * 0.08).toFixed(4)),
-        askQuantity: Number((0.58 + (tick.current % 3) * 0.07).toFixed(4)),
+        bidPrice: toPreviewDecimal(bidPrice, 2),
+        askPrice: toPreviewDecimal(bidPrice + 0.6, 2),
+        lastPrice: toPreviewDecimal(bidPrice + 0.3, 2),
+        bidQuantity: toPreviewDecimal(
+          0.7 + (tick.current % 4) * 0.08,
+          4,
+        ),
+        askQuantity: toPreviewDecimal(
+          0.58 + (tick.current % 3) * 0.07,
+          4,
+        ),
         timestamp: new Date().toISOString(),
       });
     }, 1_800);
@@ -282,8 +293,8 @@ export function RecentTradesPreview() {
         symbol: "BTC/USDT",
         assetClass: "crypto",
         tradeId: `simulated-${current}`,
-        price: Number((67_250 + movement).toFixed(2)),
-        quantity: Number((0.002 + (current % 7) * 0.0013).toFixed(6)),
+        price: toPreviewDecimal(67_250 + movement, 2),
+        quantity: toPreviewDecimal(0.002 + (current % 7) * 0.0013, 6),
         side,
         timestamp: new Date().toISOString(),
         sequence: current,
@@ -310,7 +321,7 @@ export function RecentTradesPreview() {
 }
 
 export function OrderBookPreview() {
-  const [selectedPrice, setSelectedPrice] = useState<number>();
+  const [selectedPrice, setSelectedPrice] = useState<DecimalString>();
 
   return (
     <PreviewFrame label="Deterministic snapshot">
@@ -337,15 +348,15 @@ export function TradeTicketPreview() {
         symbol="BTC/USDT"
         assetClass="crypto"
         assetRules={cryptoRules}
-        cashAvailable={10_000}
-        assetQuantityAvailable={0.5}
+        cashAvailable="10000"
+        assetQuantityAvailable="0.5"
         quoteCurrency="USDT"
         defaultValue={{
           side: "buy",
           type: "limit",
           tif: "gtc",
-          quantity: 0.025,
-          limitPrice: 67_250,
+          quantity: "0.025",
+          limitPrice: "67250",
         }}
         amountPresets={[25, 50, 75, 100]}
         classNames={ticketClassNames}
@@ -412,7 +423,7 @@ export function TradingChartPreview() {
   );
 }
 
-function PreviewFrame({
+export function PreviewFrame({
   label,
   children,
 }: {
@@ -435,22 +446,23 @@ function PreviewFrame({
   );
 }
 
-function SelectionStatus({ value }: { value: number | undefined }) {
+function SelectionStatus({ value }: { value: DecimalString | undefined }) {
   return (
     <p className="mosaic-preview-status" aria-live="polite">
       {value === undefined
         ? "Select a bid or ask level."
-        : `Selected limit price: ${value.toLocaleString(undefined, { minimumFractionDigits: 2 })} USDT`}
+        : `Selected limit price: ${value} USDT`}
     </p>
   );
 }
 
 function createLevels(side: "bid" | "ask", bestPrice: number, count: number) {
   return Array.from({ length: count }, (_, index) => ({
-    price: Number(
-      (bestPrice + (side === "bid" ? -1 : 1) * index * 0.5).toFixed(2),
+    price: toPreviewDecimal(
+      bestPrice + (side === "bid" ? -1 : 1) * index * 0.5,
+      2,
     ),
-    quantity: Number((0.32 + ((index * 7) % 9) * 0.11).toFixed(4)),
+    quantity: toPreviewDecimal(0.32 + ((index * 7) % 9) * 0.11, 4),
     orderCount: 2 + ((index * 3) % 8),
   }));
 }
@@ -472,11 +484,18 @@ function createCandles(): MarketCandle[] {
 
     return {
       timestamp: new Date(start + index * 5 * 60_000).toISOString(),
-      open,
-      high,
-      low,
-      close,
-      volume: Number((1.2 + ((index * 11) % 23) * 0.28).toFixed(3)),
+      open: toPreviewDecimal(open, 2),
+      high: toPreviewDecimal(high, 2),
+      low: toPreviewDecimal(low, 2),
+      close: toPreviewDecimal(close, 2),
+      volume: toPreviewDecimal(1.2 + ((index * 11) % 23) * 0.28, 3),
     };
   });
+}
+
+function toPreviewDecimal(
+  value: number,
+  decimalPlaces: number,
+): DecimalString {
+  return canonicalizeUnsignedDecimalLiteral(value.toFixed(decimalPlaces));
 }

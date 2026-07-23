@@ -8,12 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@zagvar/decimal':
+        specifier: 0.1.2
+        version: 0.1.2
       '@zagvar/mosaic-core':
-        specifier: 0.2.0
-        version: 0.2.0
+        specifier: 0.4.0
+        version: 0.4.0
       '@zagvar/mosaic-react':
-        specifier: 0.2.1
-        version: 0.2.1(lightweight-charts@5.2.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: 0.4.0
+        version: 0.4.0(lightweight-charts@5.2.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       cnfast:
         specifier: ^0.0.8
         version: 0.0.8
@@ -1090,11 +1093,14 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@zagvar/mosaic-core@0.2.0':
-    resolution: {integrity: sha512-rGszIiWliQDn8LtLX6wRTGUX0o5Ph8ybEQZ6ov6T+7taLf2aiRtgXT/Mer6L8RkK85wa8QFhNTb53Ul7GJVvqQ==}
+  '@zagvar/decimal@0.1.2':
+    resolution: {integrity: sha512-sFuiHH3m5Jk0PUCijeNFu9RUTgPRD59dRWR94DlnAP4rPeD7+JxAA88kGjOTutnBsNIbUKCXc/UEtNPs2NUbhQ==}
 
-  '@zagvar/mosaic-react@0.2.1':
-    resolution: {integrity: sha512-W6VXST7NLUYdGykofwulRdF8t/ijwQq4La97Rp8M0vyMbW9dEmdNtzMYdx+5nvjCRpc7Y+W4UyS1AAc4M2zBfw==}
+  '@zagvar/mosaic-core@0.4.0':
+    resolution: {integrity: sha512-0tqPPWHJ7QSjkegXr4Qw/+bggVaG5SggCOWmL94H2GZdebzwGFCjaeieO/dCINhwpwuRkaH+Kpv/15yZIqO31w==}
+
+  '@zagvar/mosaic-react@0.4.0':
+    resolution: {integrity: sha512-QSYcirFKXfQeKSXFkMOafuQaNUP5AnALSfVY0XCMq7mYQCSTujNHUDBYfBbxqCEjsGQgCkEu6ybxa+PF75WQNw==}
     peerDependencies:
       lightweight-charts: '>=5.2 <6'
       react: '>=18.3 <20'
@@ -3942,14 +3948,20 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.12.2':
     optional: true
 
-  '@zagvar/mosaic-core@0.2.0':
+  '@zagvar/decimal@0.1.2':
     dependencies:
       big.js: 7.0.1
       zod: 4.4.3
 
-  '@zagvar/mosaic-react@0.2.1(lightweight-charts@5.2.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@zagvar/mosaic-core@0.4.0':
     dependencies:
-      '@zagvar/mosaic-core': 0.2.0
+      '@zagvar/decimal': 0.1.2
+      zod: 4.4.3
+
+  '@zagvar/mosaic-react@0.4.0(lightweight-charts@5.2.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+    dependencies:
+      '@zagvar/decimal': 0.1.2
+      '@zagvar/mosaic-core': 0.4.0
       react: 19.2.7
       react-aria-components: 1.19.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react-dom: 19.2.7(react@19.2.7)

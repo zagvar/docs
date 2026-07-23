@@ -25,8 +25,13 @@ const [draft, setDraft] = useState<TradeDraftValue>({
 />;
 ```
 
-With `value`, the host is the source of truth and must commit the complete next
+With `value`, the application is the source of truth and must commit the complete next
 value received by `onChange`.
+
+The editable quantity, notional, and limit-price fields, along with the balance
+props, are canonical decimal strings. Preserve those strings in the store and
+in requests to the trading backend rather than converting them to JavaScript
+numbers.
 
 ## Headless composition
 
@@ -50,3 +55,23 @@ The hook exposes field setters, `applyPercent`, the complete `draft`, validation
 Changing instrument identity clears instrument-specific amounts. Changing order
 type removes fields that are no longer relevant. This prevents hidden stale
 values from leaking into the eventual intent.
+
+## Order-list query state
+
+`useOrdersQuery` provides the same controlled-or-uncontrolled pattern for an
+orders list:
+
+```tsx
+const orders = useOrdersQuery({
+  value: query,
+  onChange: setQuery,
+});
+```
+
+It exposes the complete `query` plus setters for scope, filters, sort, cursor,
+and page size. Changes that define a different result set clear the cursor
+automatically.
+
+Omit `value` and use `defaultValue` when the hook should own the current query.
+The hook still calls `onChange` with every complete request, so application code
+can fetch the matching backend page.

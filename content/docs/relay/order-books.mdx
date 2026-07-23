@@ -22,8 +22,8 @@ const snapshot = {
   symbol: "BTC/USD",
   assetClass: "crypto",
   venue: "COINBASE",
-  bids: [{ price: 68_249.75, quantity: 0.8 }],
-  asks: [{ price: 68_250.5, quantity: 1.1 }],
+  bids: [{ price: "68249.75", quantity: "0.8" }],
+  asks: [{ price: "68250.5", quantity: "1.1" }],
   timestamp: "2026-07-13T01:30:00.000Z",
   sequence: 120,
 };
@@ -81,7 +81,7 @@ For an incremental update, it:
 4. stores the resulting complete snapshot
 5. publishes the original incremental update
 
-Publishing the original update keeps realtime messages compact while the cache
+Publishing the original update keeps real-time messages compact while the cache
 continues to hold complete hydration state.
 
 ## Recovery policy

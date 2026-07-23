@@ -1,0 +1,55 @@
+---
+title: Rounding and truncation
+description: Apply explicit display and truncation rules to canonical decimal strings.
+---
+
+Rounding is a policy decision. Apply it deliberately and keep the unrounded
+source value when later calculations or audit records require full precision.
+
+## Display rounding
+
+`roundDecimalForDisplay` uses round-half-up:
+
+```ts
+import { roundDecimalForDisplay } from "@zagvar/decimal";
+
+roundDecimalForDisplay("1.235", 2);
+// "1.24"
+
+roundDecimalForDisplay("-1.235", 2);
+// "-1.24"
+```
+
+This helper is appropriate when a UI needs a value rounded to at most a given
+number of fractional digits. The result remains canonical, so it does not pad
+trailing zeroes. Use a formatter when the UI must display a fixed number of
+digits. Do not silently repair an invalid order amount before submission.
+
+## Truncation
+
+`truncateDecimal` removes digits beyond the requested number of places:
+
+```ts
+import { truncateDecimal } from "@zagvar/decimal";
+
+truncateDecimal("1.239", 2);
+// "1.23"
+
+truncateDecimal("-1.239", 2);
+// "-1.23"
+```
+
+For negative values, truncation moves toward zero. It is therefore not the same
+as mathematical floor, which would produce `-1.24` in the second example.
+
+## Trading rules
+
+Do not assume one rounding rule works for every trading operation:
+
+- a display may round without changing the submitted value
+- an order quantity may need truncation to an allowed increment
+- a fee or tax calculation may require a jurisdiction-specific rule
+- a ledger may require fixed currency scale and explicit posting rules
+
+Decimal supplies exact operations. The application or domain package must
+choose the correct policy and record when it was applied.

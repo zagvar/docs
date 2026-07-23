@@ -4,7 +4,7 @@ description: Present an order intent, estimates, warnings, fees, and confirmatio
 ---
 
 `OrderReview` renders a review-ready `OrderSummary`. It does not force a modal,
-sheet, or route, so the host can choose the surrounding presentation.
+sheet, or route, so the application can choose the surrounding presentation.
 
 <OrderReviewPreview />
 
@@ -38,7 +38,7 @@ The component can display:
 ## Preview expiry
 
 When the summary contains `preview_expired`, confirmation is disabled. Providing
-`onRefreshPreview` adds a refresh action. The host fetches a new backend preview,
+`onRefreshPreview` adds a refresh action. The application fetches a new backend preview,
 creates a new summary, and passes it back to the component.
 
 ## Confirmation state

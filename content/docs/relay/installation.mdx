@@ -3,9 +3,9 @@ title: Installation
 description: Choose and install the Relay packages required by a market-data service.
 ---
 
-<Callout type="warn" title="Source-first pre-release">
-  Relay packages are not published to npm yet. Use the repository to explore
-  the current API until the first package release.
+<Callout type="info" title="Published packages">
+  Relay packages are published under the `@zagvar` scope. Install only the
+  packages used by your service and pin versions deliberately in production.
 </Callout>
 
 ## Requirements
@@ -27,8 +27,7 @@ pnpm build
 
 ## Choose the packages
 
-Every Relay service begins with the core package. Once the packages are
-published, installation will use the standard workspace commands:
+Every Relay service begins with the core package:
 
 ```bash
 pnpm add @zagvar/relay-core
@@ -44,9 +43,6 @@ pnpm add @zagvar/relay-adapter-alpaca
 
 You do not need to install every package. A service can use the core contracts
 with its own cache, event bus, transport, and provider adapter.
-
-These commands are shown for the upcoming package release and are not expected
-to resolve from npm yet.
 
 ## Minimal in-memory pipeline
 
@@ -66,8 +62,8 @@ await pipeline.processEvent({
   symbol: "BTC/USD",
   assetClass: "crypto",
   venue: "COINBASE",
-  price: 68_250.5,
-  quantity: 0.02,
+  price: "68250.5",
+  quantity: "0.02",
   timestamp: "2026-07-12T01:30:00.000Z",
 });
 ```

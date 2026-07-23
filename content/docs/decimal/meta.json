@@ -1,0 +1,10 @@
+{
+  "title": "Decimal",
+  "pages": [
+    "index",
+    "canonical-values",
+    "validation-and-normalization",
+    "arithmetic",
+    "rounding-and-truncation"
+  ]
+}

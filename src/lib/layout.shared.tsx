@@ -32,7 +32,12 @@ export function baseOptions(): BaseLayoutProps {
         active: 'nested-url',
       },
       {
-        text: 'Build with both',
+        text: 'Decimal',
+        url: '/docs/decimal',
+        active: 'nested-url',
+      },
+      {
+        text: 'Integration guides',
         url: '/docs/guides',
         active: 'nested-url',
       },

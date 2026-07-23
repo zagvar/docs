@@ -52,6 +52,31 @@ Relay uses full public field names such as `bidPrice`, `askQuantity`, and
 `volumeWeightedAveragePrice`. Timestamps are ISO 8601 strings. Adapters should
 normalize provider units before constructing events.
 
+## Decimal values and control values
+
+Prices, quantities, volume, notionals, and signed market changes are canonical
+decimal strings from `@zagvar/decimal`. The schema chooses a non-negative,
+positive, or signed decimal contract according to the meaning of each field.
+
+```ts
+const trade = {
+  type: "trade",
+  symbol: "BTC/USD",
+  assetClass: "crypto",
+  venue: "COINBASE",
+  price: "68250.5",
+  quantity: "0.02",
+  timestamp: "2026-07-12T01:30:00.000Z",
+};
+```
+
+Keep sequence numbers, trade counts, order counts, request limits, and time
+durations as integers. They identify or control events; they are not decimal
+economic values.
+
+Applications that need the shared types, schemas, or arithmetic should import
+them directly from [`@zagvar/decimal`](/docs/decimal).
+
 ## Consolidated quotes
 
 `MarketQuote.venue` identifies the stream itself. Optional `bidVenue` and

@@ -8,11 +8,15 @@ presentation.
 
 ## Core and React packages
 
-`@zagvar/mosaic-core` contains schemas, types, validation, summaries, decimal
-helpers, and reducers. It can be used without React.
+`@zagvar/mosaic-core` contains trading schemas, types, validation, summaries,
+and reducers. It can be used without React.
 
-`@zagvar/mosaic-react` contains accessible components and `useTradeDraft`. Its
+`@zagvar/mosaic-react` contains accessible components and state hooks. Its
 components consume core contracts but do not fetch data or submit to a broker.
+
+`@zagvar/decimal` owns the canonical decimal schemas, types, normalization, and
+exact arithmetic shared by Mosaic and Relay. Import Decimal APIs directly from
+that package when application code needs them.
 
 ## Drafts, intents, and summaries
 
@@ -24,24 +28,40 @@ components consume core contracts but do not fetch data or submit to a broker.
 Mosaic does not round invalid values into valid ones. It returns stable validation
 codes so the user can correct the draft explicitly.
 
+## Canonical decimal values
+
+Public economic values use canonical decimal strings: prices, quantities,
+balances, notionals, fees, and market-data values. Most are non-negative
+`DecimalString` values such as `"195.75"` or `"0.000001"`. Values that can
+legitimately be negative, such as a maker rebate or a signed market change, use
+the signed decimal contract.
+
+Mosaic validates and calculates these strings with exact decimal arithmetic.
+Keep them as strings in application state and order or market-data payloads;
+format them only at the UI boundary. Do not parse a value into a JavaScript
+floating-point number and then send it back into a Mosaic contract.
+
+See [Decimal](/docs/decimal) for the canonical formats, normalization rules, and
+arithmetic helpers.
+
 ## Asset rules
 
 `AssetRules` describe the constraints relevant to an instrument, including
 allowed order types, supported time-in-force values, precision, tick size, lot
 size, minimums, maximums, notional support, and extended-hours rules.
 
-Rules are supplied by the host application. They may originate from a broker,
+Rules are supplied by the application. They may originate from a broker,
 exchange, product catalogue, or backend policy service.
 
 ## Market data
 
-Mosaic's display contracts use readable, provider-neutral fields and ISO 8601
-timestamps. They are intentionally sanitized: credentials, endpoints, account
-identifiers, routing details, and internal service names do not belong in UI
-market-data objects.
+Mosaic's display contracts use readable, provider-neutral fields, canonical
+decimal values, and ISO 8601 timestamps. They are intentionally sanitized:
+credentials, endpoints, account identifiers, routing details, and internal
+service names do not belong in UI market-data objects.
 
-The host controls whether data is realtime, delayed, or indicative and how its
-public source is labelled.
+The application controls whether data is real-time, delayed, or indicative and
+how its public source is labelled.
 
 ## Controlled and uncontrolled state
 
@@ -55,8 +75,8 @@ See [Controlled state](/docs/mosaic/guides/controlled-state).
 
 Mosaic supplies semantic markup, interaction behavior, state, and accessibility.
 It does not ship a product theme. Components expose named `classNames` slots so
-the host design system controls layout, typography, color, and responsive
-behavior.
+the application's design system controls layout, typography, color, and
+responsive behavior.
 
 ## Backend authority
 

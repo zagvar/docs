@@ -1,0 +1,81 @@
+---
+title: OrderDetails
+description: Present one order's instructions, fills, fees, status reason, history, and available actions.
+---
+
+`OrderDetails` renders a validated `OrderDetailsRecord`. It can sit in a route,
+dialog, drawer, or side panel; Mosaic does not choose that container.
+
+<OrderDetailsPreview />
+
+```tsx
+import { OrderDetails } from "@zagvar/mosaic-react";
+
+<OrderDetails
+  details={details}
+  numberFormat={{
+    quantityFractionDigits: 8,
+    priceFractionDigits: 2,
+    notionalFractionDigits: 2,
+  }}
+  onClose={closeDetails}
+  onCancelOrder={requestCancellation}
+  onReplaceOrder={beginReplacement}
+  isCanceling={cancelOrder.isPending}
+  isReplacing={replaceOrder.isPending}
+  onSelectRelatedOrder={openRelatedOrder}
+/>;
+```
+
+## Details contract
+
+`details.order` is the same lightweight `OrderListItem` used by
+`OrdersPanel`. The remaining fields add:
+
+| Field | Content |
+| --- | --- |
+| `fills` | Price, quantity, optional notional, liquidity role, venue, time, and sequence |
+| `fees` | Charge or rebate amount, currency, type, optional fill link, and optional fraction digits |
+| `events` | Ordered lifecycle statuses with timestamps and optional reasons |
+| `statusReason` | Current provider-neutral reason and optional display-safe message |
+
+Mosaic validates that fills, fees, and events belong to the nested order and
+rejects duplicate identifiers. Details data should already be authorized and
+sanitized by the backend.
+
+## Fees and rebates
+
+Fee estimates shown before submission are not the same as actual order fees.
+`OrderDetails` displays actual fee records supplied after submission. The
+`amount` may be negative when the venue or broker paid a rebate.
+
+Each fee may provide its own `fractionDigits`. This is useful when a fee currency
+or accounting rule needs different display precision from the order's quote
+currency.
+
+## Replacement chains
+
+When `replacesOrderId` or `replacedByOrderId` is present,
+`onSelectRelatedOrder` makes the identifier actionable. The callback receives
+the related order ID so application code can load its authorized details.
+
+## Actions
+
+Cancel and replace controls appear only when both conditions hold:
+
+1. the nested order's backend-provided capability is `true`
+2. the corresponding callback is supplied
+
+`isCanceling` and `isReplacing` report pending state and prevent duplicate
+actions. The component does not confirm, send, or optimistically complete an
+action; those decisions belong to application code and the trading backend.
+
+## Presentation
+
+The component includes an order summary, status reason, fills table, fees list,
+lifecycle timeline, and available actions. Empty sections remain understandable
+when no fills, fees, or events have been returned.
+
+Use `messages` for product terminology and localization. Use `classNames` for
+the surrounding design system, including narrow-screen table treatment and
+status colors.

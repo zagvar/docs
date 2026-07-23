@@ -1,0 +1,67 @@
+---
+title: Canonical values
+description: Learn the unsigned and signed decimal-string formats accepted by @zagvar/decimal.
+---
+
+A canonical decimal string has one unambiguous text representation. This makes
+equality, caching, JSON, validation, and test fixtures predictable.
+
+## Unsigned values
+
+`DecimalString` represents zero or a positive base-10 value.
+
+| Value | Accepted? | Reason |
+| --- | --- | --- |
+| `"0"` | Yes | Canonical zero |
+| `"42"` | Yes | Whole number |
+| `"195.75"` | Yes | Canonical fraction |
+| `"0.000001"` | Yes | Small canonical fraction |
+| `"1.20"` | No | Redundant trailing zero |
+| `"01"` | No | Redundant leading zero |
+| `"1e-6"` | No | Exponent notation is not canonical |
+| `"-1"` | No | Unsigned values cannot be negative |
+
+Use `decimalStringSchema` or its alias
+`nonNegativeDecimalStringSchema` when zero is allowed. Use
+`positiveDecimalStringSchema` when the value must be greater than zero.
+
+## Signed values
+
+`SignedDecimalString` also permits negative values:
+
+```ts
+signedDecimalStringSchema.parse("-1.25");
+negativeDecimalStringSchema.parse("-0.005");
+```
+
+Negative zero is never canonical. A calculation that produces negative zero is
+normalized to `"0"`.
+
+Signed values are useful for rebates, credits, price changes, and other fields
+whose domain permits values below zero.
+
+## Length limit
+
+Canonical values and incoming decimal literals are limited to 128 characters.
+The literal canonicalizers also reject compact exponent values whose expanded
+form would exceed that limit. This prevents small input strings from expanding
+into unexpectedly large allocations.
+
+## TypeScript and runtime validation
+
+`DecimalString` and `SignedDecimalString` are TypeScript aliases. They document
+intent, but they do not validate an unknown string by themselves:
+
+```ts
+import {
+  decimalStringSchema,
+  type DecimalString,
+} from "@zagvar/decimal";
+
+function parseAmount(value: unknown): DecimalString {
+  return decimalStringSchema.parse(value);
+}
+```
+
+Parse values when they cross an untrusted boundary, including HTTP, WebSocket,
+database, cache, environment, and user-input boundaries.

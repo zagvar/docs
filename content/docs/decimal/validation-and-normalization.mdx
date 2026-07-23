@@ -1,0 +1,72 @@
+---
+title: Validation and normalization
+description: Validate canonical contracts and normalize editable or provider-supplied decimal text safely.
+---
+
+Validation and normalization solve different problems:
+
+- **Validation** checks that a value is already canonical.
+- **Normalization** converts an accepted source representation into canonical
+  form.
+
+Keeping those operations separate prevents malformed boundary data from being
+silently repaired where strict validation is required.
+
+## Validate an existing contract
+
+```ts
+import { positiveDecimalStringSchema } from "@zagvar/decimal";
+
+positiveDecimalStringSchema.parse("12.5");
+// "12.5"
+
+positiveDecimalStringSchema.parse("12.50");
+// throws: trailing zeros are not canonical
+```
+
+Use strict schemas for application state, API contracts, cache records, and
+other places where values are expected to be canonical already.
+
+## Normalize completed form input
+
+`normalizeDecimalInput` accepts complete unsigned input and removes trailing
+fractional zeros:
+
+```ts
+import { normalizeDecimalInput } from "@zagvar/decimal";
+
+normalizeDecimalInput("12.500");
+// "12.5"
+```
+
+Incomplete text such as `"12."` is intentionally rejected. A form component
+may keep that text locally while a person is editing, then normalize it after
+the value becomes complete. Mosaic's decimal fields follow this pattern.
+
+## Canonicalize provider number tokens
+
+Provider JSON may contain decimal tokens with trailing zeros or exponent
+notation. Capture the original token as text with a lossless JSON parser, then
+canonicalize it:
+
+```ts
+import {
+  canonicalizeDecimalLiteral,
+  canonicalizeUnsignedDecimalLiteral,
+} from "@zagvar/decimal";
+
+canonicalizeUnsignedDecimalLiteral("2.370");
+// "2.37"
+
+canonicalizeDecimalLiteral("1e-6");
+// "0.000001"
+```
+
+Do not parse a provider token into a JavaScript `number` first. Once source
+digits have been rounded or exponent-expanded by floating-point conversion,
+turning the number back into a string cannot restore the original precision.
+
+<Callout type="warn" title="Strings are not automatically safe">
+  A string preserves source digits only when those digits were captured before
+  lossy numeric conversion. Use a lossless parser at external JSON boundaries.
+</Callout>

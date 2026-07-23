@@ -2,6 +2,7 @@
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
 @import '../components/mosaic/previews.css';
+@import '../components/mosaic/order-previews.css';
 
 :root {
   --font-sans: var(--font-geist-sans), ui-sans-serif, sans-serif;

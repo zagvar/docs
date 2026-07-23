@@ -41,8 +41,8 @@ export default function HomePage() {
 
         <p className="mt-7 max-w-2xl text-pretty text-lg leading-8 text-fd-muted-foreground">
           Mosaic handles the interface. Relay handles market-data delivery.
-          Adopt either independently or connect both through an application
-          boundary you control.
+          Decimal preserves exact values across both. Adopt any project
+          independently or connect them through application code you control.
         </p>
 
         <div className="mt-9 flex flex-wrap gap-3">
@@ -57,7 +57,7 @@ export default function HomePage() {
             href="/docs/guides"
             className="rounded-full border border-fd-border bg-fd-background/70 px-5 py-2.5 text-sm font-medium backdrop-blur transition-colors hover:bg-fd-accent"
           >
-            Build with both
+            Integration guides
           </Link>
         </div>
       </section>
@@ -105,9 +105,17 @@ export default function HomePage() {
 
       <section className="mx-auto w-full max-w-6xl px-6 pb-24 pt-8">
         <div className="rounded-2xl border border-fd-border bg-fd-muted/35 px-6 py-7 sm:px-8">
-          <p className="text-sm font-medium">
-            One application-controlled boundary
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-medium">
+              One application-controlled flow
+            </p>
+            <Link
+              href="/docs/decimal"
+              className="text-sm font-medium text-fd-muted-foreground underline decoration-fd-border underline-offset-4 transition-colors hover:text-fd-foreground"
+            >
+              Exact values provided by @zagvar/decimal
+            </Link>
+          </div>
           <div className="mt-5 grid gap-3 text-sm text-fd-muted-foreground sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center">
             <span className="rounded-lg border border-fd-border bg-fd-background px-4 py-3 text-fd-foreground">
               Market-data providers
